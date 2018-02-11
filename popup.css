@@ -1,0 +1,89 @@
+/* Checkbox body */
+
+label {
+  display: inline-block;
+  width: 40px;
+  height: 18px;
+  margin: 0px auto;
+  border-radius: 100px;
+  transition: all 0.2s ease-in-out;
+  -webkit-transition: all 0.2s ease-in-out;
+  background-color: red;
+}
+
+input {
+  display: none;
+}
+
+/* The toggle */
+
+i {
+  height: 14px;
+  width: 14px;
+  background: #ffffff;
+  display: inline-block;
+  border-radius: 100px;
+  margin-top: 2px;
+  margin-left: 2px;
+  transition: all 0.2s ease-in-out;
+  -webkit-transition: all 0.2s ease-in-out;
+  pointer-events: none;
+  box-shadow: 0px 0px 0px 0px rgba(0, 0, 0, 0);
+}
+
+i.implied {
+  margin-left: 14px;
+}
+label.implied {
+  background-color: grey;
+}
+
+label:hover>i {
+  box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.20);
+  transform: scale(1.01);
+}
+
+input:checked+label>i {
+  margin-left: 24px;
+}
+
+label:active {
+  background-color: #A6B9CB;
+}
+
+label:active>i {
+  width: 34px;
+  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.20);
+}
+
+input:checked+label:active>i {
+  margin-left: 4px;
+}
+
+input:checked+label {
+  background-color: green;
+}
+
+input:checked+label>i::after {
+  content: '✓';
+  position: relative;
+  left: 3px;
+  top: -2px;
+}
+input:not(checked)+label>i::after {
+  content: '\1f6ab';
+  position: relative;
+  left: 0px;
+  top: -2px;
+}
+input:not(checked)+label.implied>i::after {
+  content: '✓';
+  position: relative;
+  left: 1px;
+  top: -2px;
+}
+
+.outofstate {
+  filter: brightness(0.75);
+  font-style: italic; 
+}

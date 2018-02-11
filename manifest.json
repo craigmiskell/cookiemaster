@@ -1,0 +1,44 @@
+{
+  "manifest_version": 2,
+  "name": "CookieMaster",
+  "homepage_url": "https://www.stroppykitten.com/cookiemaster",
+  "applications": {
+    "gecko": {
+      "id": "cookiemaster@stroppykitten.com"
+    }
+  },
+  "version": "1.0",
+
+  "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
+
+    "icons": {
+    "48": "icons/cookies-48.png",
+    "96": "icons/cookies-96.png"
+  },
+   "permissions": [
+    "http://*/*",
+    "https://*/*",
+    "cookies",
+    "notifications",
+    "storage",
+    "tabs",
+    "unlimitedStorage",
+    "webNavigation",
+    "webRequest",
+    "webRequestBlocking"
+    
+  ],
+  "browser_action": {
+    "browser_style": true,
+    "default_icon": "icons/cookies-32.png",
+    "default_title": "CookieMaster",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "scripts": ["cookie-parse.js", "config.js", "background.js"]
+  },
+  "options_ui": {
+    "page": "options.html",
+    "browser_style": true
+  }
+}

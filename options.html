@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <script src="config.js"></script>
+    <script src="options.js"></script>
+  </head>
+
+<body>
+  <h2>Third party cookie behaviour</h2>
+  <form id="optionsForm">
+      <select id="thirdParty">
+        <option value="AllowNone">Block All</option>
+        <option value="AllowIfOtherwiseAllowed">Allow only if explicitly permitted</option>
+        <option value="AllowAll">Allow All (not recommended)</option>
+      </select>
+  </form>
+  <hr>
+  <h2>Sites allowed to set cookies</h2>
+  <form id="allowListForm">
+    Website address:<br>
+    <input type="text" id="newSite" style="width:100%"></input><br>
+    <button type="button" id="addSite">Add Site</button><br>
+    <select id="allowList" size="10" multiple style="width:400px">
+    </select><br>
+    <button type="button" id="removeSites">Remove Selected</button><br>
+  </form>
+  <hr>
+  <form id="resetSettingsForm">
+    <button type="submit">Reset to factory settings</button>
+  </form>
+  <hr>
+  <a id='helplink' href="will-be-replaced-at-load-time" target="_blank">Help</a>
+</body>
+
+</html>
