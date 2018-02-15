@@ -1,0 +1,5 @@
+2018-02-11 - version 1.0 release
+
+2018-02-15 - version 1.0.1 release
+  Changes: 
+    Fixed handling of bare hostnames (i.e. those without domains, being on your local LAN)
