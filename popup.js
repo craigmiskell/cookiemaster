@@ -323,19 +323,24 @@ async function render(force = false) {
   console.log(blockedObj);
   console.log(otherCookies);
 */
-  var parsedHostname = psl.parse(hostname);
   var domainComponents = []
-  domainComponents.push(parsedHostname.sld);
-  if(parsedHostname.subdomain) {
-    domainComponents = domainComponents.concat(parsedHostname.subdomain.split('.').reverse());
+  if(hostname.includes('.')) {
+    var parsedHostname = psl.parse(hostname);
+    domainComponents.push(parsedHostname.sld);
+    if(parsedHostname.subdomain) {
+      domainComponents = domainComponents.concat(parsedHostname.subdomain.split('.').reverse());
+    }
+  } else {
+    //No '.' in the string; just a plain hostname
+    domainComponents = [hostname];
   }
   
   clearDiv('primaryCookies');
   var fragment = document.createDocumentFragment();
 
-  var partDomain = parsedHostname.tld;
+  var partDomain = parsedHostname ? parsedHostname.tld : "";
   for(var dc of domainComponents) {
-    partDomain = dc + "." + partDomain;
+    partDomain = (partDomain == "") ? dc : (dc + "." + partDomain);
     var icon = document.createElement('img');  
     var action = CookieActions.Unset;
     if(cookieInHash(allowedObj.firstParty, partDomain) || cookieInHash(otherCookies.firstParty.allowed, partDomain)) {
