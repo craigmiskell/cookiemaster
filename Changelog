@@ -3,3 +3,7 @@
 2018-02-15 - version 1.0.1 release
   Changes: 
     Fixed handling of bare hostnames (i.e. those without domains, being on your local LAN)
+
+2018-02-22 - verison 1.0.2 unreleased
+  Changes:
+    Use bootstrap.css in the popup, and restyle slightly to look a bit less ugly

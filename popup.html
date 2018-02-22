@@ -1,6 +1,7 @@
 <html>
   <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="bootstrap.min.css">
     <link rel="stylesheet" href="popup.css"/>
     <script src="config.js"></script>
     <script src="psl.min.js"></script>
@@ -13,14 +14,16 @@
       <span id="a"><b>Cookies for </b><span id="hostname"></span></span>
       <div id="primaryCookies"></div>
     </div>
-    <hr>
-    <div id="thirdPartyTitle" style="font-weight:bold"><img id="thirdPartyArrow" src="../icons/arrow-right.png" height="15" width="15">Other Cookies:</div>
-    <div id="thirdPartyWrapper" style="display:none">
-      <div id="allowedThirdPartyCookies"></div>
-      <div id="blockedThirdPartyCookies"></div>
+    <br style="line-height: 0.5">
+    <div style="background:hsl(0,0%,98%)">
+      <div id="thirdPartyTitle" style="font-weight:bold"><img id="thirdPartyArrow" src="../icons/arrow-right.png" height="15" width="15">Other Cookies:</div>
+      <div id="thirdPartyWrapper" style="display:none">
+        <div id="allowedThirdPartyCookies"></div>
+        <div id="blockedThirdPartyCookies"></div>
+      </div>
     </div>
+    <a id='helplink' href="will-be-replaced-at-load-time" target="_blank"><button class="btn btn-info btn-sm">Help</button></a>
   </div>
   </form>
-  <a id='helplink' href="will-be-replaced-at-load-time" target="_blank">Help</a>
   </body>
 </html>
