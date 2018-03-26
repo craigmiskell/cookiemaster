@@ -64,8 +64,6 @@ function filterSetCookie(header, requestURL, tabURL, tabId) {
     }
     if(deleteCount == cookies.length) {
       //All cookies in the header were a 'delete'; allow it
-      console.log("Allowing cookie deletion:");
-      console.log(header);
       return true;
     }
 
@@ -123,7 +121,7 @@ function filterSetCookie(header, requestURL, tabURL, tabId) {
         allOK = false;
       }
     }
-    if(allOk) {
+    if(allOK) {
       var allowedDomains = Object.keys(allow);
       for(var d of allowedDomains) {
         registerCookie(tabInfo['cookieDomainsAllowed'], d, allow[d]); 
