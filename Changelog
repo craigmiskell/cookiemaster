@@ -4,6 +4,8 @@
   Changes: 
     Fixed handling of bare hostnames (i.e. those without domains, being on your local LAN)
 
-2018-02-22 - verison 1.0.2 unreleased
+2018-03-26 - verison 1.0.2 release 
   Changes:
     Use bootstrap.css in the popup, and restyle slightly to look a bit less ugly
+    Remove unnecessary logging on cookie delete
+    Fix a bug in handling of multiple cookies in one header
