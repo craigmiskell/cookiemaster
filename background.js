@@ -135,7 +135,7 @@ function filterSetCookie(header, requestURL, tabURL, tabId) {
       //console.log("Blocking first party cookie for "+domain);
     }
     tabInfo.updated = Date.now();
-    return allowCount == cookies.length;
+    return allOK
   }
   //Any non-cookie header is left alone 
   return true;

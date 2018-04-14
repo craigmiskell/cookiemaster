@@ -7,7 +7,7 @@
       "id": "cookiemaster@stroppykitten.com"
     }
   },
-  "version": "1.0.2",
+  "version": "1.0.3",
 
   "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
 
