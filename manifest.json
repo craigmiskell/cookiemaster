@@ -4,15 +4,11 @@
   "homepage_url": "https://www.stroppykitten.com/cookiemaster",
   "applications": {
     "gecko": {
-      "id": "cookiemaster@stroppykitten.com"
-    }
-  },
-  "version": "1.0.4",
-  "applications": {
-    "gecko": {
+      "id": "cookiemaster@stroppykitten.com",
       "strict_min_version": "59.0"
     }
   },
+  "version": "1.0.4",
   "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
 
     "icons": {
