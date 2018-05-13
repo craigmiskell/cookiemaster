@@ -4,8 +4,17 @@
   Changes: 
     Fixed handling of bare hostnames (i.e. those without domains, being on your local LAN)
 
-2018-03-26 - verison 1.0.2 release 
+2018-03-26 - version 1.0.2 release 
   Changes:
     Use bootstrap.css in the popup, and restyle slightly to look a bit less ugly
     Remove unnecessary logging on cookie delete
     Fix a bug in handling of multiple cookies in one header
+
+2018-04-15 - version 1.0.3 release
+  Changes:
+    Fix typo bug that was probably allowing cookies to be set when they shouldn't have been
+
+2018-05-13 - version 1.0.4 release
+  Changes:
+    Add warnings in the browser action/popup to alert users if their FF cookie settings
+      are incompatible with the CookieMaster settings in ways that might prove surprising.
