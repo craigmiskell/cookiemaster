@@ -7,8 +7,12 @@
       "id": "cookiemaster@stroppykitten.com"
     }
   },
-  "version": "1.0.3",
-
+  "version": "1.0.4",
+  "applications": {
+    "gecko": {
+      "strict_min_version": "59.0"
+    }
+  },
   "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
 
     "icons": {
@@ -20,6 +24,7 @@
     "https://*/*",
     "cookies",
     "notifications",
+    "privacy",
     "storage",
     "tabs",
     "unlimitedStorage",

@@ -9,7 +9,7 @@
   </head>
 
 <body>
-  <h2>Third party cookie behaviour</h2>
+  <h3>Third party cookie behaviour</h3>
   <form id="optionsForm">
       <select id="thirdParty">
         <option value="AllowNone">Block All</option>
@@ -18,7 +18,7 @@
       </select>
   </form>
   <hr>
-  <h2>Sites allowed to set cookies</h2>
+  <h3>Sites allowed to set cookies</h3>
   <form id="allowListForm">
     Website address:<br>
     <input type="text" id="newSite" style="width:100%"></input><br>
@@ -26,6 +26,11 @@
     <select id="allowList" size="10" multiple style="width:400px">
     </select><br>
     <button type="button" id="removeSites">Remove Selected</button><br>
+  </form>
+  <hr>
+  <h3> Other settings</h3>
+  <form>
+  <input type="checkbox" id="ignoreSettingsWarning"/> Ignore incompatible cookie settings warning
   </form>
   <hr>
   <form id="resetSettingsForm">

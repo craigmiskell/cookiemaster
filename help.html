@@ -16,6 +16,9 @@ For third-party cookies, the default assumption is that you do not want to allow
 It's also important to know that cookies take effect for sub-domains, e.g. a cookie set for "example.com" will be used for any requests to "www.example.com", "test.example.com", "foo.bar.example.com" and so-on.  And in CookieMaster, allowing cookies for a higher level domain (e.g. example.com) implicitly allows cookies for any subdomains (e.g. www.example.com)
 
 <h1>How to use CookieMaster <img src="icons/cookies-32.png"></h1>
+<h2>Configuration requirements</h2>
+CookieMaster inserts itself into the cookie processing at a couple of control points to block/delete cookies that have not been allowed.  If a cookie <em>is</em> allowed, CookieMaster simply does nothing and lets Firefox do it's normal cookie handling.  Therefore, you almost definitely want to have Firefox's cookie settings configured to "Accept cookies from websites", and possibly want "Accept third-party cookies" to something other than "Never".  CookieMaster tries to alert you if your settings might lead to unexpected results, but it's worth checking at least once that your general Cookie settings are how they should be.
+<h2>Usage</h2>
 CookieMaster presents as an icon in your Toolbar menu; when you click on it, a small popup/dropdown menu appears, that may look something like this:<br>
 <p style="text-align:center"><img src="help/popup-menu1.png"></p><br>
 In this case, I have visited www.example.com, and because I haven't specifically allowed it, cookies for www.example.com and example.com are both blocked.  However, this site has not even <em>tried</em> to set cookies.  Let's say I'm visiting https://edition.cnn.com/, and I click on the CookieMaster icon:<br>

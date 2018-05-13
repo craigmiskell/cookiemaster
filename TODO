@@ -1,3 +1,7 @@
+Cookie-preference checking:
+  Install-time warning if config is out of state.
+  Uninstall warning: could only be generic, leaks state (possibly), and is probably not desirable.  Consider.
+
 Popup:
   Fix wrap of primary sub-domains when displaying other cookies (shouldn't wrap) once it needs a vertical scroll bar.  THis may be unfixable; firefox "should" widen the popup when the scrollbar is put in, but doesn't, so everything has to wrap.  Did experiment with setting document.body.style = "width: <something calculated>" but that was fragile and breaky, and seems unwise.
   Right justify domains (Other at least, possibly primary?).  May require tables, for my sins.  It's possible a solution to this may help the wrapping too (by coincidence)

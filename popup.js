@@ -19,7 +19,8 @@
 async function saveConfig(config) {
   await browser.storage.local.set({
     thirdParty: config.thirdParty,
-    allowList: config.allowList
+    allowList: config.allowList,
+    ignoreSettingsWarning: ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false
   });
   await browser.runtime.sendMessage({"name": "configChanged"}) 
 }
@@ -401,8 +402,82 @@ async function render(force = false) {
   rendering = false;
 }
 
+async function ignoreSettingsWarning() {
+  var config = await getConfig();
+  config.ignoreSettingsWarning = true;
+  await saveConfig(config);
+  warningDiv.remove();
+}
+
+async function setCookiesAllowAll() {
+  var result = await browser.privacy.websites.cookieConfig.set({
+    value: {
+      behavior: "allow_all"
+    }
+  });
+  var warningDiv = document.getElementById("warningDiv")
+  if(result) {
+    warningDiv.remove();
+  } else {
+    warningDiv.appendChild(document.createElement("br"));
+    warningDiv.appendChild(document.createTextNode("Unable to change setting"));
+  }
+}
+
+async function checkCookieConfig() {
+  var config = await getConfig();
+  var ignore = ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false;
+
+  if(ignore) {
+    return;
+  }
+  browser.privacy.websites.cookieConfig.get({}).then((cookieConfig) => {
+    var behaviour = cookieConfig.value.behavior;
+    var warnings = [];
+    if(behaviour == 'reject_all') {
+      warnings.push(" Firefox is set to reject all cookies");
+      warnings.push("CookieMaster will have no discernible effect");
+    } else if (behaviour == 'reject_third_party' && config.thirdParty != ThirdPartyOptions.AllowNone) {
+      var configAsText = ( config.thirdParty == "AllowAll") ? "allow all" : "allow only if explicitly permitted";
+      warnings.push(" Firefox is set to reject 3rd party cookies");
+      warnings.push("CookieMaster is configured to "+ configAsText + ",");
+      warnings.push("which will have no effect");
+    } else if (behaviour == 'allow_visited' && config.thirdParty != ThirdPartyOptions.AllowAll) {
+      var configAsText = ( config.thirdParty == "AllowNone") ? "block all" : "allow only if explicitly permitted";
+      warnings.push(" Firefox is set to allow 3rd party cookies only from sites that have been visited,");
+      warnings.push("which is incompatible with the CookieMaster 3rd party setting to "+configAsText);
+    }
+
+    if(warnings.length > 0) {
+      var warningDiv = document.createElement("div");
+      warningDiv.id = "warningDiv";
+      warningDiv.classList.add('alert', 'alert-warning');
+      var warningIcon = document.createElement("span");
+      warningIcon.classList.add('glyphicon', 'glyphicon-warning-sign');
+      warningDiv.appendChild(warningIcon);
+      for(var i=0; i <warnings.length; i++) {
+        warningDiv.appendChild(document.createTextNode(warnings[i]));
+        warningDiv.appendChild(document.createElement("br"));
+      }
+      var configLink = document.createElement("a");
+      configLink.appendChild(document.createTextNode('Set to "Allow All"'));
+      configLink.addEventListener('click', setCookiesAllowAll);
+      warningDiv.appendChild(configLink);
+      warningDiv.appendChild(document.createTextNode(" | "));
+
+      var ignoreLink = document.createElement("a");
+      ignoreLink.appendChild(document.createTextNode('Ignore this warning'));
+      ignoreLink.addEventListener('click', ignoreSettingsWarning);
+      warningDiv.appendChild(ignoreLink);
+      var main = document.getElementById("main");
+      main.insertBefore(warningDiv, main.firstChild);
+    }
+  });
+}
+
 async function contentLoaded() {
   document.getElementById('helplink').href = browser.extension.getURL("help.html");
+  checkCookieConfig();
   render();
   document.getElementById('thirdPartyTitle').addEventListener('click', toggleThirdParty);
   window.setInterval(render, 500); 

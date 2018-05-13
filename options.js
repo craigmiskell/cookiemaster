@@ -22,9 +22,11 @@ function saveOptions() {
   for (var option of allowListSelect.options) {
     allowList.push(option.value);
   } 
+  var ignoreSettingsWarning = document.querySelector("#ignoreSettingsWarning").checked
   browser.storage.local.set({
     thirdParty: document.querySelector("#thirdParty").value,
-    allowList: allowList
+    allowList: allowList,
+    ignoreSettingsWarning: ignoreSettingsWarning
   });
   browser.runtime.sendMessage({"name": "configChanged"});
 }
@@ -53,6 +55,7 @@ function displayOptions() {
     for (var domain of config.allowList) {
       addDomainToDisplayList(domain);
     }
+    document.querySelector("#ignoreSettingsWarning").checked = config.ignoreSettingsWarning;
   });
 }
 
@@ -94,6 +97,7 @@ function contentLoaded() {
   displayOptions(); 
   //Can't do this until the content is loaded, with the script in <head>.  I like it there too
   document.querySelector("#thirdParty").addEventListener("change", saveOptions);
+  document.querySelector("#ignoreSettingsWarning").addEventListener("change", saveOptions);
   document.querySelector("#resetSettingsForm").addEventListener("submit", resetSettings);
 
   document.querySelector("#removeSites").addEventListener("click", removeSites);
