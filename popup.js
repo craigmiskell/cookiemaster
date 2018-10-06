@@ -475,8 +475,16 @@ async function checkCookieConfig() {
   });
 }
 
+function openHelp(e) {
+  console.log("opening help");
+  browser.tabs.create({
+    active: true,
+    url: browser.extension.getURL("help.html")
+  });
+}
+
 async function contentLoaded() {
-  document.getElementById('helplink').href = browser.extension.getURL("help.html");
+  document.getElementById('helplink').addEventListener('click', openHelp);
   checkCookieConfig();
   render();
   document.getElementById('thirdPartyTitle').addEventListener('click', toggleThirdParty);
