@@ -48,13 +48,6 @@ async function toggleException(checkbox, domain) {
   //checkbox.checked is the *new* state, after the change 
   var label = checkbox.nextSibling;
   var domainSpan = label.nextElementSibling;
-/*  if(label.classList.contains('outofstate')) {
-    label.classList.remove('outofstate');
-    domainSpan.classList.remove('outofstate');
-  } else {
-    label.classList.add('outofstate');
-    domainSpan.classList.add('outofstate');
-  }*/
   if(checkbox.checked) {
     //Is checked, was not checked before: want to allow, so add an exception
     await addException(domain); 
