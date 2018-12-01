@@ -18,3 +18,8 @@
   Changes:
     Add warnings in the browser action/popup to alert users if their FF cookie settings
       are incompatible with the CookieMaster settings in ways that might prove surprising.
+
+2018-12-02 - version 1.0.5 release
+  Changes:
+    Fix help button
+    Fix so it works in Incognito/Private Browsing mode
