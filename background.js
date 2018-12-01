@@ -21,6 +21,15 @@ function handleMessage(message, sender, sendResponse) {
     case "configChanged":
       loadConfig();
       break;
+    //Message passing to work around https://bugzilla.mozilla.org/show_bug.cgi?id=1329304
+    // - can't getBackgroundPage() from an incognito window.  Given how (relatively) easy
+    // it is to work around this behaviour, it's clearly not a security feature.  It's just annoying
+    case "getTabsInfo":
+      sendResponse(tabsInfo[message.tabId]);
+      break;
+    case "getDomains":
+      sendResponse(domains);
+      break;
   }
 }
 

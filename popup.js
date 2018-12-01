@@ -282,11 +282,17 @@ async function render(force = false) {
   thirdPartySectionGenerated = false;
   var config = await getConfig();
 
-  var bg = await browser.runtime.getBackgroundPage();
 
   var tabs = await browser.tabs.query({active: true, currentWindow: true});
   var tab = tabs[0];
-  var tabInfo = bg.tabsInfo[tab.id];
+  var tabInfo = await browser.runtime.sendMessage({
+    "name": "getTabsInfo",
+    "tabId": tab.id
+  });
+
+  var domains = await browser.runtime.sendMessage({
+    "name": "getDomains",
+  });
 
   if(!tab.url.startsWith('http')) {
     document.body.innerHTML = "<em>Not an HTTP(S) page</em>";
@@ -303,7 +309,7 @@ async function render(force = false) {
       rendering = false;
       return;
     }
-    if((tabInfo.updated < lastUpdated && bg.domains.updated < lastUpdated)) {
+    if((tabInfo.updated < lastUpdated && domains.updated < lastUpdated)) {
       //Nothing has changed; no need to redisplay anything
       rendering = false;
       return;
@@ -312,7 +318,7 @@ async function render(force = false) {
   lastUpdated = Date.now();
   var allowedObj = categoriseCookies(tabInfo.cookieDomainsAllowed, hostname);
   var blockedObj = categoriseCookies(tabInfo.cookieDomainsBlocked, hostname);
-  var otherCookies = collectOtherCookies(hostname, tabInfo, bg.domains);
+  var otherCookies = collectOtherCookies(hostname, tabInfo, domains);
   /*console.log(allowedObj);
   console.log(blockedObj);
   console.log(otherCookies);
