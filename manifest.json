@@ -36,7 +36,7 @@
     "default_popup": "popup.html"
   },
   "background": {
-    "scripts": ["cookie-parse.js", "config.js", "background.js"]
+    "scripts": ["tough-cookie.js", "cookie-parse.js", "config.js", "background.js"]
   },
   "options_ui": {
     "page": "options.html",

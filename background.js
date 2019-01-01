@@ -65,7 +65,13 @@ function filterSetCookie(header, requestURL, tabURL, tabId) {
     var deleteCount = 0;
     var now = new Date();
     for (var cookie of cookies) {
-      if(cookie.hasOwnProperty('expires') && ((new Date(cookie['expires'])) <= now)) {
+      var expires;
+      if(cookie.hasOwnProperty('expires')) {
+        expires = parseDate(cookie['expires'])
+        //NB: may still be undefined if the expires av is malformed, this is fine
+      }
+      //Will be false if 'expires' is undefined.
+      if(expires <= now) {
         deleteCount += 1;
       } else if (cookie.hasOwnProperty('max-age') && (cookie['max-age'] <= 0)) {
         deleteCount += 1;
