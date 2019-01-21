@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 
 <html>
-  <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" href="bootstrap.min.css">
-    <script src="config.js"></script>
-    <script src="options.js"></script>
-  </head>
-
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" href="options.css">
+  <script src="config.js"></script>
+  <script src="options.js"></script>
+</head>
 <body>
   <h3>Third party cookie behaviour</h3>
   <form id="optionsForm">
@@ -17,25 +17,30 @@
         <option value="AllowAll">Allow All (not recommended)</option>
       </select>
   </form>
-  <hr>
   <h3>Sites allowed to set cookies</h3>
   <form id="allowListForm">
-    Website address:<br>
-    <input type="text" id="newSite" style="width:100%"></input><br>
-    <button type="button" id="addSite">Add Site</button><br>
-    <select id="allowList" size="10" multiple style="width:400px">
-    </select><br>
-    <button type="button" id="removeSites">Remove Selected</button><br>
+    Domain (website address):<br>
+    <input type="text" id="newSite" name="newSite" style="width:100%"></input><br>
+    <button type="button" id="addSite">Add Site</button>
+    <input type="radio" value="Persistent" name="allowType" id="allowTypePersistent" checked><label for="allowTypePersistent">Persistent</label>
+    <input type="radio" value="Session" name="allowType" id="allowTypeSession"><label for="allowTypeSession">Session</label>
+    <br>
+    <table class="tableSection" id="allowListTable">
+      <thead>
+        <tr><th style="width: 72%">Domain</th><th style="width: 30%">Lifetime</th><th>Delete</th></tr>
+      </thead>
+      <tbody id="allowListTableBody"></tbody>
+    </table>
   </form>
-  <hr>
   <h3> Other settings</h3>
   <form>
   <input type="checkbox" id="ignoreSettingsWarning"/> Ignore incompatible cookie settings warning
   </form>
-  <hr>
+  <div><hr></div>
   <form id="resetSettingsForm">
     <button type="submit">Reset to factory settings</button>
   </form>
+  <!-- <a id="testConfig">Test config object allowList</a> -->
   <hr>
   <a id='helplink' href="will-be-replaced-at-load-time" target="_blank">Help</a>
 </body>

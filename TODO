@@ -3,6 +3,7 @@ Cookie-preference checking:
   Uninstall warning: could only be generic, leaks state (possibly), and is probably not desirable.  Consider.
 
 Popup:
+  Tooltips on icons
   Fix wrap of primary sub-domains when displaying other cookies (shouldn't wrap) once it needs a vertical scroll bar.  THis may be unfixable; firefox "should" widen the popup when the scrollbar is put in, but doesn't, so everything has to wrap.  Did experiment with setting document.body.style = "width: <something calculated>" but that was fragile and breaky, and seems unwise.
   Right justify domains (Other at least, possibly primary?).  May require tables, for my sins.  It's possible a solution to this may help the wrapping too (by coincidence)
 
@@ -11,3 +12,5 @@ Consider setting the pageAction icons based on allowed/blocked for first party c
 
 Convert the uses of plain javascript objects to Map, where possible
 
+Better error handling: catch exceptions where rational (particularly the code processing headers/cookies, which could fail for data reasons).  Console.log, but also store them somewhere on a rotating buffer, and make them visible via the preferences page and/or from the pageAction (or browserAction?).
+Also consistent logging in the same place, so it's not commented out console.log calls.  Enable/disable with a UI toggle, to maintain speed

@@ -17,30 +17,24 @@
 */
 
 async function saveConfig(config) {
-  await browser.storage.local.set({
-    thirdParty: config.thirdParty,
-    allowList: config.allowList,
-    ignoreSettingsWarning: ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false
-  });
+  config.save();
   await browser.runtime.sendMessage({"name": "configChanged"}) 
 }
 
 async function addException(domain) {
-  var config = await getConfig();
+  var config = await Config.get();
   var d = domain;
   if(!domain.startsWith('.')) {
     d = "."+domain;
   }
-  config.allowList.push(domain);
+  //TODO: set the correct AllowType based on UI selections
+  config.setDomainAllow(domain, AllowTypes.Persistent);
   await saveConfig(config);
 }
 
 async function removeException(domain) {
-  var config = await getConfig();
-  var index = config.allowList.indexOf(domain);
-  if(index >= 0) {
-    config.allowList.splice(index,1);
-  }
+  var config = await Config.get();
+  config.removeDomainFromAllowList(domain);
   await saveConfig(config);
 }
 
@@ -115,9 +109,9 @@ function createToggle(container, config, cookieAction, domain, domainNameSpan) {
   //NB: Check the CSS for the input/label/i behaviour; TL;DR: checkbox is invisible, the label is 
   // clickable (htmlFor), and the 'i' is the toggle button. End result is (misc attribs elided for brevity): 
   // <input id="foo"><label for="foo"><i></i></label> <span>$DOMAIN</span>
-  var checked = domainInList(config, domain);
-  var configDomain = domainIsAllowed(config, domain);
-  var implied = configDomain && (domain.length > configDomain.length);
+  var checked = config.domainInList(domain);
+  var configDomain = config.domainIsAllowed(domain);
+  var implied = configDomain && (domain.length > configDomain.domain.length);
 
   var checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
@@ -280,7 +274,7 @@ async function render(force = false) {
   }
   rendering = true;
   thirdPartySectionGenerated = false;
-  var config = await getConfig();
+  var config = await Config.get();
 
 
   var tabs = await browser.tabs.query({active: true, currentWindow: true});
@@ -402,7 +396,7 @@ async function render(force = false) {
 }
 
 async function ignoreSettingsWarning() {
-  var config = await getConfig();
+  var config = await Config.get();
   config.ignoreSettingsWarning = true;
   await saveConfig(config);
   warningDiv.remove();
@@ -424,7 +418,7 @@ async function setCookiesAllowAll() {
 }
 
 async function checkCookieConfig() {
-  var config = await getConfig();
+  var config = await Config.get();
   var ignore = ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false;
 
   if(ignore) {

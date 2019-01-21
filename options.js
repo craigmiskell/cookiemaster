@@ -1,7 +1,7 @@
 /*
   Copyright 2017 Craig Miskell
 
-  This file is part of CookieMaster, a Firefox Web Extension 
+  This file is part of CookieMaster, a Firefox Web Extension
   CookieMaster is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -13,101 +13,180 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-function saveOptions() {
-  var allowListSelect = document.querySelector("#allowList");
-  var allowList = [];
-  for (var option of allowListSelect.options) {
-    allowList.push(option.value);
-  } 
-  var ignoreSettingsWarning = document.querySelector("#ignoreSettingsWarning").checked
-  browser.storage.local.set({
-    thirdParty: document.querySelector("#thirdParty").value,
-    allowList: allowList,
-    ignoreSettingsWarning: ignoreSettingsWarning
-  });
-  browser.runtime.sendMessage({"name": "configChanged"});
+async function saveOptions() {
+  var newConfig = new Config({});
+  var allowListTableBody = document.querySelector("#allowListTableBody");
+  for (let row of allowListTableBody.rows) {
+    var domainCell = row.cells[0];
+    var allowTypeCell = row.cells[1];
+    newConfig.setDomainAllow(domainCell.dataset.value, allowTypeCell.dataset.value);
+  }
+
+  newConfig.thirdParty = document.querySelector("#thirdParty").value;
+  newConfig.ignoreSettingsWarning = document.querySelector("#ignoreSettingsWarning").checked;
+  newConfig.save();
+
+  await browser.runtime.sendMessage({"name": "configChanged"});
 }
 
-function addDomainToDisplayList(domain) {
-  var allowListSelect = document.querySelector("#allowList");
-  var newOption = document.createElement("option");
-  newOption.value = domain;
-  newOption.text = domain;
-
-  for(var option of allowListSelect.options) {
-    if(option.value > domain) {
-      //This is the first option in the list which sorts lexically after the new one
-      // so insert immediately before the it 
-      allowListSelect.add(newOption, option);
-      return;
+function addDomainToDisplayList(domain, allowType, setup = false) {
+  var allowListTableBody = document.querySelector("#allowListTableBody");
+  var index = 0;
+  for(let row of allowListTableBody.rows) {
+    var domainCell = row.cells[0];
+    if (domainCell.dataset.value > domain) {
+      break;
     }
+    index++;
   }
-  //Didn't find any existing option to insert before; chuck it on the end
-  allowListSelect.add(newOption);
+  var newRow = allowListTableBody.insertRow(index);
+
+  //The use of 'dataset' is possibly overkill here, but it avoids
+  // any potential for unexpected behaviour with interpretation
+  // of the value as it round-trips through the display/DOM
+  var domainCell = newRow.insertCell(0);
+  domainCell.innerText = domain;
+  domainCell.dataset.value = domain;
+  domainCell.style.width = "70%";
+
+  var allowTypeCell = newRow.insertCell(1);
+  allowTypeCell.innerText = allowType;
+  allowTypeCell.dataset.value = allowType;
+  allowTypeCell.style.width = "30%";
+
+  var deleteCell = newRow.insertCell(2);
+  //Don't set the width; just let it sort of fill in
+  var deleteLink = document.createElement('a');
+  deleteLink.classList.add('glyphicon', 'glyphicon-remove', 'delete' );
+  deleteLink.addEventListener('click', function(e) {
+    var rows = allowListTableBody.rows;
+    for (let i = 0; i < rows.length; i++) {
+      if(rows[i].cells[0].dataset.value == domain) {
+        allowListTableBody.deleteRow(i);
+      }
+    }
+    saveOptions();
+  });
+  deleteCell.appendChild(deleteLink);
+
+  //Setup flag set true in displayOptions, so we don't scroll when doing initial data load
+  if(!setup) {
+    //False => align to bottom, i.e. scroll only far enough to show the new item
+    newRow.scrollIntoView(false);
+  }
 }
 
 function displayOptions() {
-  getConfig().then((config) => {
-    document.querySelector("#thirdParty").value = config.thirdParty; 
-    for (var domain of config.allowList) {
-      addDomainToDisplayList(domain);
+  Config.get().then((config) => {
+    document.querySelector("#thirdParty").value = config.thirdParty;
+    for (let domain of config.allowList.keys()) {
+      addDomainToDisplayList(domain, config.allowList.get(domain).allowType, true);
     }
     document.querySelector("#ignoreSettingsWarning").checked = config.ignoreSettingsWarning;
   });
 }
 
 function addSite(e) {
-  var allowListSelect = document.querySelector("#allowList");
-  var newSiteTextField = document.querySelector("#newSite");
-  var domain = newSiteTextField.value; 
+  var allowListTableBody = document.querySelector("#allowListTableBody");
+  var formData = new FormData(document.querySelector('#allowListForm'))
+  var domain = formData.get('newSite');
+  var allowType = formData.get('allowType');
 
-  for(var option of allowListSelect.options) {
-    if(option.value == domain) {
-      return;
-    }
-  }
   if(domain && (domain != "")) {
-    addDomainToDisplayList(domain);
-    newSiteTextField.value = "";
+   for(let row of allowListTableBody.rows) {
+      var domainCell = row.cells[0];
+      if(domainCell.dataset.value == domain) {
+        var allowTypeCell = row.cells[1];
+        if(allowTypeCell.dataset.value != allowType) {
+          allowTypeCell.dataset.value = allowType;
+          allowTypeCell.innerText = allowType;
+          saveOptions();
+        }
+        return;
+      }
+    }
+    addDomainToDisplayList(domain, formData.get('allowType'));
+    document.querySelector("#newSite").value = "";
     saveOptions();
   }
 }
 
-function removeSites(e) {
-  var allowListSelect = document.querySelector("#allowList");
-  var selectedIndexes = [] 
-  for (var option of allowListSelect.selectedOptions) {
-    selectedIndexes.push(option.index);
-  }
-  //Reverse sort, so we're removing entries from the end first (not messing up the indexes of what remains)
-  selectedIndexes.sort(function(a, b) {
-    //Numerical comparison, not the default string; b-a => reverse sort
-    return b - a;
-  });
-  for(var index of selectedIndexes) {
-    allowListSelect.remove(index); 
-  }
-  saveOptions();
-}
-
 function contentLoaded() {
-  displayOptions(); 
-  //Can't do this until the content is loaded, with the script in <head>.  I like it there too
+  displayOptions();
   document.querySelector("#thirdParty").addEventListener("change", saveOptions);
   document.querySelector("#ignoreSettingsWarning").addEventListener("change", saveOptions);
   document.querySelector("#resetSettingsForm").addEventListener("submit", resetSettings);
+  var testLink = document.querySelector("#testConfig");
+  if(testLink) {
+    testLink.addEventListener("click", testConfig);
+  }
 
-  document.querySelector("#removeSites").addEventListener("click", removeSites);
-  document.querySelector("#addSite").addEventListener("click", addSite); 
+  document.querySelector("#addSite").addEventListener("click", addSite);
   document.getElementById('helplink').href = browser.extension.getURL("help.html");
 }
 
-function resetSettings() {
+async function resetSettings() {
   console.log("Clearing all settings");
-  browser.storage.local.clear();
-  resetToFactorySettings();
+  await browser.storage.local.clear();
+  await Config.resetToFactorySettings();
 }
+
+//A test harness, until I can get around to figuring out unit test infrastructure
+function expectTrue(value, message) {
+  expect(value, true, message);
+}
+function expectFalse(value, message) {
+  expect(value, false, message);
+}
+function expect(value, expected, message) {
+  if(value != expected) {
+    console.error("Failed:" + message);
+  } else {
+    console.log("Passed: " + message);
+  }
+}
+async function testConfig() {
+  //First test is just arbitrary data; if this fails, all is lost
+  console.log("***************************************************************************");
+  console.log("Test with arbitrary data that should work");
+  var config = new Config({
+    allowList: ['www.stroppykitten.com', 'www.slashdot.org'],
+    thirdParty: ThirdPartyOptions.AllowAll,
+  });
+  expectTrue((config.allowList instanceof Map), "config.allowList should be a Map");
+  //TODO: update this to expect a structure (domain + allow type), when Config returns it
+  expect(config.domainIsAllowed("www.stroppykitten.com"), {domain: "www.stroppykitten.com", settings: new DomainSettings(AllowTypes.Persistent)}, "www.stroppykitten.com should be allowed");
+
+  console.log("***************************************************************************");
+  console.log("Test by saving array format to local storage, then using the factory method");
+  //This test *saves* version 1 config (allowList is an array), then creates a new config object
+  // and ensures it converts to a map and works as expected.
+  await browser.storage.local.clear();
+  await browser.storage.local.set({
+    allowList: ['www.stroppykitten.com', 'www.slashdot.org'],
+    thirdParty: ThirdPartyOptions.AllowAll,
+  });
+
+  var results = await browser.storage.local.get();
+  expectTrue(Array.isArray(results.allowList), "allowList from storage should be an array");
+
+  var config2 = await Config.get();
+  expectTrue((config2.allowList instanceof Map), "config2.allowList should be a Map");
+  //TODO: update this to expect a structure (domain + allow type), when Config returns it
+  expect(config2.domainIsAllowed("www.stroppykitten.com"), {domain: "www.stroppykitten.com", settings: new DomainSettings(AllowTypes.Persistent)}, "www.stroppykitten.com should be allowed");
+
+  console.log("***************************************************************************");
+  console.log("test a fresh load of allowList still has an array; hasn't been saved yet");
+  var results2 = await browser.storage.local.get();
+  expectTrue(Array.isArray(results2.allowList), "allowList from storage should be an array");
+
+  console.log("***************************************************************************");
+  await config2.save();
+  var results3 = await browser.storage.local.get("allowList");
+  expectTrue((results3.allowList instanceof Map), "results3.allowList should be a Map");
+}
+
 document.addEventListener('DOMContentLoaded', contentLoaded);

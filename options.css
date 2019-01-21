@@ -1,0 +1,28 @@
+/* From Mr_Green @ Stackoverflow: https://stackoverflow.com/a/17585032
+   lightly modified.  Not always entirely perfect, but close enough
+*/
+table.tableSection {
+  display: table;
+  width: 100%;
+}
+table.tableSection thead, table.tableSection tbody {
+  float: left;
+  width: 100%;
+}
+table.tableSection tbody {
+  overflow: auto;
+  height: 200px;
+  border-top: 1px solid #dddddd;
+}
+table.tableSection tr {
+  width: 100%;
+  display: table;
+  text-align: left;
+}
+table.tableSection tr:nth-child(even) {background: #CCC}
+table.tableSection tr:nth-child(odd) {background: #FFF}
+
+/* Not from stack overflow */
+a.delete {
+  color: #cc0000;
+}
