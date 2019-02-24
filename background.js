@@ -53,9 +53,9 @@ function registerCookie(cookiesRecord, cookieDomain, configDomain) {
 }
 
 function filterSetCookie(header, requestURL, tabURL, tabId) {
-//  console.log("filtersetcookie " + header.name);
+  //console.log("filtersetcookie " + header.name);
   if(header.name.toLowerCase() == 'set-cookie') {
-    //console.log("set-cookie for " + requestUrl);
+    //console.log("set-cookie for " + requestURL + " on tab with url " + tabURL);
 
     //Notice if this header is 'deleting' cookies by setting the expiry date; allow that always, because
     // that's what people would expect to happen.  Attributes 'Expires' (a date) or 'Max-Age' (number of seconds).  
@@ -155,7 +155,20 @@ function filterSetCookie(header, requestURL, tabURL, tabId) {
   //Any non-cookie header is left alone 
   return true;
 }
+
+function getNewLocation(headers) {
+  var locationHeader = headers.find(function(header) {
+    return (header.name.toLowerCase() == 'location')
+  });
+  if (locationHeader) {
+    return locationHeader.value;
+  }
+  return undefined;
+}
+
 async function headersReceived(details) {
+//  console.log("headersReceived");
+//  console.log(details);
   var tabURL;
   var tabId = details.tabId;
   var tabInfo = getTabInfo(tabId);
@@ -171,6 +184,22 @@ async function headersReceived(details) {
   var filteredResponseHeaders = details.responseHeaders.filter(function(header) {
     return filterSetCookie(header, details.url, tabURL, tabId)
   });
+
+  // Having filtered cookies based on *this* request URL, detect redirects (301 + 302)
+  // in the primary frame (frameId 0).  If we see one, we need to update the
+  // primary URL for this tab, so we get first/third-party handling correct in later
+  // responses, because beforeNavigation doesn't get called again for such redirects
+  // This is annoying, and possibly fragile
+  if(details.frameId == 0) {
+    // 0 == the main frame,
+    if ([301,302,303,307,308].includes(details.statusCode)) {
+      //Redirect type responses; the Location header will be the new URL
+      var newLocation = getNewLocation(details.responseHeaders);
+      //console.log("Redirect response from " + details.url + " to " + newLocation);
+      tabInfo["frameInfo"][details.frameId] = newLocation
+    }
+  }
+
   return {responseHeaders: filteredResponseHeaders};
 }
 
@@ -188,6 +217,8 @@ async function beforeRequest(details) {
   var tabInfo = getTabInfo(tabId);
   tabInfo.domainsFetched[hostname] = Date.now();
   tabInfo.updated = Date.now();
+
+  //console.log("Request started for " + details.url)
 }
 
 // Catch script-set cookies (that weren't in headers).  Yes, this may have to process (and allow again)
@@ -272,8 +303,8 @@ async function loadConfig() {
 // loaded before it becomes available on the tab, so we can do the right thing with
 // early cookie blocking.  And reset per-tab-page-load cookie logs
 function beforeNavigate(details) {
-//  console.log("Before navigate " + details.url);
-//  console.log(details.frameId);
+  //console.log("Before navigate " + details.url);
+  //console.log(details.frameId);
   var tabId = details.tabId;
   if(details.frameId == 0) {
     // 0 == the main frame, i.e. new URL for the tab, not just a sub-frame, so it's properly time to
@@ -282,13 +313,14 @@ function beforeNavigate(details) {
   }
   var tabInfo = getTabInfo(tabId);
   tabInfo["frameInfo"][details.frameId] = details.url;
-} 
+}
 function navigationCompleted(details) {
   //Don't create the tabinfo if it doesn't already exist
   if(details.tabId in tabsInfo) {
     var tabInfo = getTabInfo(details.tabId);
     delete tabInfo["frameInfo"][details.frameId];
   }
+  //console.log("Navigation completed " + details.url)
 } 
 
 function getTabInfo(tabId) {
