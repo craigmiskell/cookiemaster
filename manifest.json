@@ -8,7 +8,7 @@
       "strict_min_version": "59.0"
     }
   },
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
 
     "icons": {
