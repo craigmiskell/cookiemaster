@@ -27,3 +27,11 @@
 2019-01-01 - version 1.0.6 release
   Changes:
     Fix parsing of Expires values that wasn't handling common date formats
+
+2019-02-24 - version 1.0.7 release
+  Changes:
+    Correctly handle redirects of the primary URL for ta tab
+
+2019-03-10 - version 1.0.8 release
+  Changes:
+    Fix redirect handling to take into account relative URLs
