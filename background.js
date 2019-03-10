@@ -195,6 +195,10 @@ async function headersReceived(details) {
     if ([301,302,303,307,308].includes(details.statusCode)) {
       //Redirect type responses; the Location header will be the new URL
       var newLocation = getNewLocation(details.responseHeaders);
+      //The newLocation might be relative, so always use URL to resolve it with
+      // the optional 'base' arg.  Saves hassles later, I promise
+      var baseURL = new URL(details.url);
+      newLocation = new URL(newLocation, baseURL.origin).href;
       //console.log("Redirect response from " + details.url + " to " + newLocation);
       tabInfo["frameInfo"][details.frameId] = newLocation
     }
