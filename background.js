@@ -257,8 +257,10 @@ async function cookieChanged(changeInfo) {
       // 1) Success: we don't have a tabId to record the successful deletion against
       // 2) Failure happens (race condition: set/set/delete/delete), and doesn't matter
       browser.cookies.remove({
-        url: url,  
-        name: cookie.name
+        url: url,
+        name: cookie.name,
+        storeId: cookie.storeId,
+        firstPartyDomain: cookie.firstPartyDomain
       });
       action = 'blocked';
     } else {
