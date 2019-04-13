@@ -35,3 +35,7 @@
 2019-03-10 - version 1.0.8 release
   Changes:
     Fix redirect handling to take into account relative URLs
+
+2019-04-13 - version 1.0.9 release
+  Changes:
+    Fix private browsing removal of javascript-set cookies
