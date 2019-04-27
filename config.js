@@ -91,7 +91,7 @@ class Config {
 
   //Private, use only from the constructor, when we were given an array instead
   upgradeAllowListFromArrayToMap() {
-    console.log("Converting allowList to a map");
+    contextSafeLog("Converting allowList to a map");
     //Convert to a map; key is the domian name, value is a DomainSettings object
     var newAllowList = new Map();
     for (var domain of this.config.allowList) {

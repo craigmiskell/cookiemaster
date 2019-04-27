@@ -16,19 +16,34 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+//All uses of logging in the background script must go direct to logger; sendMessage will not
+// send a message within a context/frame, so we can't sendMessage from here and
+// have it received by logger.  Was unable to find any simple way to spin off logger
+// into its own context sufficient to make this work
+let logger = new Logger();
+
 function handleMessage(message, sender, sendResponse) {
-  switch (message.name) {
-    case "configChanged":
+  //TODO: Convert to returning a Promise; sendResponse is going away
+  // (https://github.com/mozilla/webextension-polyfill/issues/16#issuecomment-296693219)
+  // See https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/runtime/onMessage
+  switch (message.type) {
+    case MessageTypes.ConfigChanged:
       loadConfig();
       break;
     //Message passing to work around https://bugzilla.mozilla.org/show_bug.cgi?id=1329304
     // - can't getBackgroundPage() from an incognito window.  Given how (relatively) easy
     // it is to work around this behaviour, it's clearly not a security feature.  It's just annoying
-    case "getTabsInfo":
+    case MessageTypes.GetTabsInfo:
       sendResponse(tabsInfo[message.tabId]);
       break;
-    case "getDomains":
+    case MessageTypes.GetDomains:
       sendResponse(domains);
+      break;
+    case MessageTypes.GetLogLevel:
+      sendResponse(logger.level);
+      break;
+    case MessageTypes.SetLogLevel:
+      logger.level = message.level;
       break;
   }
 }
@@ -53,53 +68,49 @@ function registerCookie(cookiesRecord, cookieDomain, configDomain) {
 }
 
 function processHeader(header, requestURL, tabURL, tabId) {
-  //console.log("processHeader:" + header.name);
   if(header.name.toLowerCase() == 'set-cookie') {
-    //console.log("set-cookie for " + requestURL);
+    logger.log(LogLevel.DEBUG, "set-cookie header for " + requestURL);
 
     //Notice if this header is 'deleting' cookies by setting the expiry date; allow that always, because
     // that's what people would expect to happen.  Attributes 'Expires' (a date) or 'Max-Age' (number of seconds).
     //If there is more than one cookie in the header then *all* must be a delete/expire to succeed in this check.
     // NB: This logs/records nothing; the cookie is to be deleted so requires no visibility in the UI
     var cookies = parseCookies(header);
-    //console.log("Got cookies");
     var deleteCount = 0;
     var now = new Date();
     for (var cookie of cookies) {
       var expires;
-      //console.log("Checking cookie");
-      //console.log(cookie);
+      //Elide the value of the cookie for logging; it may be sensitive
+      let logCookie = Object.assign({}, cookie);
+      logCookie.value = 'REDACTED';
+      logger.log(LogLevel.DEBUG, "Checking cookie: " + JSON.stringify(logCookie));
       if(cookie.hasOwnProperty('expires')) {
         //NB: will result in 'undefined' if the expires av is malformed; this is fine.
         expires = parseDate(cookie['expires'])
         cookie['expires'] = expires; //Save the parsed 'Date' object, for later potential reserializing
       }
-      //console.log("Expires: " + expires);
+      logger.log(LogLevel.DEBUG, "Expires: " + expires);
       //Will be false if 'expires' is undefined.
       if(expires <= now) {
         deleteCount += 1;
       } else if (cookie.hasOwnProperty('max-age') && (cookie['max-age'] <= 0)) {
         deleteCount += 1;
       }
-      //console.log("Delete count " +deleteCount);
+      logger.log(LogLevel.DEBUG, "Delete count " +deleteCount);
     }
     if(deleteCount == cookies.length) {
       //All cookies in the header were a 'delete'; allow this header
-      //console.log("All cookies were a delete; allow");
+      logger.log(LogLevel.DEBUG, "All cookies were a delete; allow");
       return header;
     }
 
-    //console.log("About to parse URLs: "+ requestURL);
     var rURL = new URL(requestURL);
-    //console.log("got rURL, parsing tabURL " + tabURL);
     var tURL = new URL(tabURL);
-    //console.log("got tURL");
 
     var tabInfo = getTabInfo(tabId);
-    //console.log("got tabInfo");
 
     if(tURL.hostname != rURL.hostname) {
-      //console.log("third party cookie: "+tURL.hostname+" vs "+rURL.hostname)
+      logger.log(LogLevel.DEBUG, "third party cookie: "+tURL.hostname+" vs "+rURL.hostname)
       // Third party cookie
       switch(config.thirdParty) {
         case ThirdPartyOptions.AllowAll:
@@ -108,8 +119,7 @@ function processHeader(header, requestURL, tabURL, tabId) {
             registerCookie(tabInfo['cookieDomainsAllowed'], d, d);
           }
           tabInfo.updated = Date.now();
-          //console.log("Allowing third party cookie for "+d+"; allow all");
-          //console.log(header);
+          logger.log(LogLevel.INFO, "Allowing third party cookie for "+d+"; allow all");
           return header;
         case ThirdPartyOptions.AllowNone:
           for(var cookie of cookies) {
@@ -117,7 +127,7 @@ function processHeader(header, requestURL, tabURL, tabId) {
             registerCookie(tabInfo['cookieDomainsBlocked'], d, d);
           }
           tabInfo.updated = Date.now();
-          //console.log("Blocking third party cookie; not allowed");
+          logger.log(LogLevel.INFO, "Blocking third party cookie for "+d+"; not allowed");
           return undefined;
         case ThirdPartyOptions.AllowIfOtherwiseAllowed:
           // continue on with normal processing
@@ -132,7 +142,7 @@ function processHeader(header, requestURL, tabURL, tabId) {
     //  *) Public suffixes (http://publicsuffix.org/)
     //  *) Path: we filter by hostname; the path is irrelevant
 
-    //console.log("First party cookie for "+ rURL.hostname);
+    logger.log(LogLevel.INFO, "Checking first party cookie for "+ rURL.hostname);
     //Some miscreants (tapad.com for example) send multiple cookies in one header, with line breaks between.
     // We check each individually, and *all* must be allowed if any are to be (e.g. they could have
     //  different domains, and we have to fail-safe)
@@ -142,13 +152,12 @@ function processHeader(header, requestURL, tabURL, tabId) {
 
     for (cookie of cookies) {
       var domain = cookie['domain'] || rURL.hostname;
-      //console.log("Domain: " + domain);
+      logger.log(LogLevel.DEBUG, "Domain: " + domain);
       var configDomain = config.domainIsAllowed(domain);
       if(configDomain != undefined) {
         allow[domain] = configDomain;
-        //console.log(configDomain);
         if(configDomain.settings.allowType == AllowTypes.Session) {
-          //console.log("Session cookie only; removing time fields (if any)");
+          logger.log(LogLevel.INFO, "Allow session cookies only; removing time fields (if any)");
           delete cookie['expires'];
           delete cookie['max-age'];
         }
@@ -180,7 +189,7 @@ function processHeader(header, requestURL, tabURL, tabId) {
       for(var d of allowedDomains) {
         registerCookie(tabInfo['cookieDomainsAllowed'], d, allow[d].domain);
       }
-      //console.log("Allowing first party cookie(s) for "+domain);
+      logger.log(LogLevel.INFO, "Allowing first party cookie(s) for "+domain);
 
       return header;
     } else {
@@ -188,7 +197,7 @@ function processHeader(header, requestURL, tabURL, tabId) {
         var d = cookie['domain'] || rURL.hostname;
         registerCookie(tabInfo['cookieDomainsBlocked'], d, d);
       }
-      //console.log("Blocking first party cookie for "+domain);
+      logger.log(LogLevel.INFO, "Blocking first party cookie for "+domain);
       return undefined;
     }
   }
@@ -208,22 +217,23 @@ function getNewLocation(headers) {
 
 async function headersReceived(details) {
   try {
+    //Leave these as optional console.log for now; they're super detailed
+    // and may contain sensitive info.  Maybe only report at a highest of levels
+    // and never send to dev?
     //console.log("headersReceived");
     //console.log(details);
     var tabURL;
     var tabId = details.tabId;
     var tabInfo = getTabInfo(tabId);
     var frameInfo = tabInfo["frameInfo"];
-    //console.log("headersReceived");
-    //console.log(details.frameId);
+    logger.log(LogLevel.DEBUG, "headersReceived in frame "+ details.frameId);
     if(details.frameId in frameInfo) {
-      //console.log("Getting tabURL from frameinfo (frameId: "+details.frameId+")");
       tabURL = frameInfo[details.frameId];
-      //console.log("Got tabURL: "+tabURL);
+      logger.log(LogLevel.DEBUG, "Got tabURL "+tabURL +" from frameInfo with frameId("+details.frameId+")");
     } else {
       var tab = await browser.tabs.get(tabId);
       tabURL = tab.url
-      //console.log("Got tabURL from the tab itself, being "+tabURL);
+      logger.log(LogLevel.DEBUG, "Got tabURL from the tab itself, being "+tabURL);
     }
     var filteredResponseHeaders = details.responseHeaders.map(function(header) {
       return processHeader(header, details.url, tabURL, tabId)
@@ -245,14 +255,13 @@ async function headersReceived(details) {
         // the optional 'base' arg.  Saves hassles later, I promise
         var baseURL = new URL(details.url);
         newLocation = new URL(newLocation, baseURL.origin).href;
-        //console.log("Redirect response from " + details.url + " to " + newLocation);
+        logger.log(LogLevel.DEBUG, "Redirect response from " + details.url + " to " + newLocation);
         tabInfo["frameInfo"][details.frameId] = newLocation
       }
     }
     return {responseHeaders: filteredResponseHeaders};
   } catch(e) {
-    console.log("Exception in headersReceived");
-    console.log(e);
+    logger.log(LogLevel.ERROR, e);
     //Return the original; it's not ideal, but it'll do if things have gone horribly wrong
     return {responseHeaders: details.responseHeaders }
   }
@@ -274,10 +283,9 @@ async function beforeRequest(details) {
     tabInfo.domainsFetched[hostname] = Date.now();
     tabInfo.updated = Date.now();
 
-    //console.log("Request started for " + details.url)
+    logger.log(LogLevel.DEBUG, "Request started for " + details.url)
   } catch(e) {
-    console.log("Exception in beforeRequest");
-    console.log(e);
+    logger.log(LogLevel.ERROR, e);
   }
 }
 
@@ -316,7 +324,7 @@ async function cookieChanged(changeInfo) {
     }
     var url = prefix + d + cookie.path;
     if(configDomain == undefined) {
-      //console.log("Blocking cookie-change cookie for "+domain);
+      logger.log(LogLevel.INFO, "Blocking cookie-change cookie for "+domain);
       //Don't care about the result of deleting the cookie, because:
       // 1) Success: we don't have a tabId to record the successful deletion against
       // 2) Failure happens (race condition: set/set/delete/delete), and doesn't matter
@@ -328,9 +336,9 @@ async function cookieChanged(changeInfo) {
       });
       action = 'blocked';
     } else {
-      //console.log("Allowing cookie-change cookie for "+domain);
+      logger.log(LogLevel.INFO, "Allowing cookie-change cookie for "+domain);
       if(configDomain.settings.allowType == AllowTypes.Session && cookie.hasOwnProperty("expirationDate")) {
-        //console.log("Only session cookies allowed; removing expirationDate");
+        logger.log(LogLevel.INFO, "Only session cookies allowed; removing expirationDate");
         delete cookie['expirationDate']
         //There are some other properties in the supplied cookie which cookies.set will reject
         // so we have to delete them.  Good game, Firefox.
@@ -354,8 +362,7 @@ async function cookieChanged(changeInfo) {
   } catch(e) {
     //Catch and log the error so that we can potentially see it, rather than a silent fail
     // from an internal callback
-    console.log("Exception cookieChanged:")
-    console.log(e);
+    logger.log(LogLevel.ERROR, e);
   }
 }
 
@@ -385,7 +392,7 @@ var domains = {
 }
 
 async function loadConfig() {
-  //console.log("Loadconfig");
+  logger.log(LogLevel.DEBUG, "Load Config");
   config = await Config.get();
 }
 
@@ -394,8 +401,7 @@ async function loadConfig() {
 // early cookie blocking.  And reset per-tab-page-load cookie logs
 function beforeNavigate(details) {
   try {
-    //console.log("Before navigate " + details.url);
-    //console.log(details.frameId);
+    logger.log(LogLevel.DEBUG, "Before navigate " + details.url + " in frame " +details.frameId);
     var tabId = details.tabId;
     if(details.frameId == 0) {
       // 0 == the main frame, i.e. new URL for the tab, not just a sub-frame, so it's properly time to
@@ -405,8 +411,7 @@ function beforeNavigate(details) {
     var tabInfo = getTabInfo(tabId);
     tabInfo["frameInfo"][details.frameId] = details.url;
   } catch(e) {
-    console.log("Exception in beforeNavigate");
-    console.log(e);
+    logger.log(LogLevel.ERROR, e);
   }
 }
 
@@ -417,10 +422,9 @@ function navigationCompleted(details) {
       var tabInfo = getTabInfo(details.tabId);
       delete tabInfo["frameInfo"][details.frameId];
     }
-    //console.log("Navigation completed " + details.url)
+    logger.log(LogLevel.DEBUG, "Navigation completed " + details.url)
   } catch(e) {
-    console.log("Exception in navigationCompleted");
-    console.log(e);
+    logger.log(LogLevel.ERROR, e);
   }
 }
 
@@ -441,12 +445,12 @@ function getTabInfo(tabId) {
 //Tidyup; delete metadata about tabs that have been closed
 function tabRemoved(tabId) {
   if(tabsInfo[tabId]) {
-    //console.log(tabsInfo[tabId]);
+    logger.log(LogLevel.DEBUG, "Deleting info for tabId "+ tabId);
     delete tabsInfo[tabId];
   }
 }
 
-//console.log("Loading CookieMaster extension @ " + Date());
+logger.log(LogLevel.INFO, "Loading CookieMaster extension @ " + Date());
 loadConfig();
 
 browser.webRequest.onHeadersReceived.addListener(

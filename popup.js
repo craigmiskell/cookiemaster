@@ -18,7 +18,7 @@
 
 async function saveConfig(config) {
   config.save();
-  await browser.runtime.sendMessage({"name": "configChanged"}) 
+  await browser.runtime.sendMessage({type: MessageTypes.ConfigChanged})
 }
 
 async function addException(domain) {
@@ -280,12 +280,12 @@ async function render(force = false) {
   var tabs = await browser.tabs.query({active: true, currentWindow: true});
   var tab = tabs[0];
   var tabInfo = await browser.runtime.sendMessage({
-    "name": "getTabsInfo",
-    "tabId": tab.id
+    type: MessageTypes.GetTabsInfo,
+    tabId: tab.id
   });
 
   var domains = await browser.runtime.sendMessage({
-    "name": "getDomains",
+    type: MessageTypes.GetDomains,
   });
 
   if(!tab.url.startsWith('http')) {
@@ -313,10 +313,10 @@ async function render(force = false) {
   var allowedObj = categoriseCookies(tabInfo.cookieDomainsAllowed, hostname);
   var blockedObj = categoriseCookies(tabInfo.cookieDomainsBlocked, hostname);
   var otherCookies = collectOtherCookies(hostname, tabInfo, domains);
-  /*console.log(allowedObj);
-  console.log(blockedObj);
-  console.log(otherCookies);
-*/
+  contextSafeLog(LogLevel.DEBUG, "Popup Allowed: " + JSON.stringify(allowedObj));
+  contextSafeLog(LogLevel.DEBUG, "Popup Blocked: " + JSON.stringify(blockedObj));
+  contextSafeLog(LogLevel.DEBUG, "Popup Other: " + JSON.stringify(otherCookies));
+
   var domainComponents = []
   if(hostname.includes('.')) {
     var parsedHostname = psl.parse(hostname);
@@ -468,15 +468,21 @@ async function checkCookieConfig() {
   });
 }
 
+function openLogs(e) {
+  browser.windows.create({
+    url: browser.runtime.getURL("logs.html")
+  });
+}
+
 function openHelp(e) {
-  console.log("opening help");
   browser.tabs.create({
     active: true,
-    url: browser.extension.getURL("help.html")
+    url: browser.runtime.getURL("help.html")
   });
 }
 
 async function contentLoaded() {
+  document.getElementById('logslink').addEventListener('click', openLogs);
   document.getElementById('helplink').addEventListener('click', openHelp);
   checkCookieConfig();
   render();

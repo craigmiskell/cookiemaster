@@ -29,7 +29,7 @@ async function saveOptions() {
   newConfig.ignoreSettingsWarning = document.querySelector("#ignoreSettingsWarning").checked;
   newConfig.save();
 
-  await browser.runtime.sendMessage({"name": "configChanged"});
+  await browser.runtime.sendMessage({type: MessageTypes.ConfigChanged});
 }
 
 function addDomainToDisplayList(domain, allowType, setup = false) {
@@ -114,7 +114,7 @@ function addSite(e) {
   }
 }
 
-function contentLoaded() {
+async function contentLoaded() {
   displayOptions();
   document.querySelector("#thirdParty").addEventListener("change", saveOptions);
   document.querySelector("#ignoreSettingsWarning").addEventListener("change", saveOptions);
@@ -125,13 +125,22 @@ function contentLoaded() {
   }
 
   document.querySelector("#addSite").addEventListener("click", addSite);
-  document.getElementById('helplink').href = browser.extension.getURL("help.html");
+  document.getElementById('openLogs').href = browser.runtime.getURL("logs.html");
+  document.getElementById('helplink').href = browser.runtime.getURL("help.html");
 }
 
 async function resetSettings() {
-  console.log("Clearing all settings");
+  logger.log("Clearing all settings");
   await browser.storage.local.clear();
   await Config.resetToFactorySettings();
+}
+
+function handleMessage(message, sender, sendMessage) {
+  switch(message.type) {
+    case MessageTypes.MessageLogged:
+      displayLogs();
+      break;
+  }
 }
 
 //A test harness, until I can get around to figuring out unit test infrastructure
@@ -190,3 +199,4 @@ async function testConfig() {
 }
 
 document.addEventListener('DOMContentLoaded', contentLoaded);
+browser.runtime.onMessage.addListener(handleMessage);

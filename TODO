@@ -11,6 +11,3 @@ Consider setting the pageAction icons based on allowed/blocked for first party c
     This will require noticing when the active tab changes and updating.
 
 Convert the uses of plain javascript objects to Map, where possible
-
-Better error handling: catch exceptions where rational (particularly the code processing headers/cookies, which could fail for data reasons).  Console.log, but also store them somewhere on a rotating buffer, and make them visible via the preferences page and/or from the pageAction (or browserAction?).
-Also consistent logging in the same place, so it's not commented out console.log calls.  Enable/disable with a UI toggle, to maintain speed
