@@ -1,7 +1,7 @@
 /*
   Copyright 2017 Craig Miskell
 
-  This file is part of CookieMaster, a Firefox Web Extension 
+  This file is part of CookieMaster, a Firefox Web Extension
   CookieMaster is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 async function saveConfig(config) {
@@ -22,7 +22,7 @@ async function saveConfig(config) {
     allowList: config.allowList,
     ignoreSettingsWarning: ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false
   });
-  await browser.runtime.sendMessage({"name": "configChanged"}) 
+  await browser.runtime.sendMessage({"name": "configChanged"})
 }
 
 async function addException(domain) {
@@ -45,12 +45,12 @@ async function removeException(domain) {
 }
 
 async function toggleException(checkbox, domain) {
-  //checkbox.checked is the *new* state, after the change 
+  //checkbox.checked is the *new* state, after the change
   var label = checkbox.nextSibling;
   var domainSpan = label.nextElementSibling;
   if(checkbox.checked) {
     //Is checked, was not checked before: want to allow, so add an exception
-    await addException(domain); 
+    await addException(domain);
   } else {
     //Not checked, was before; want to block this domain, so remove any exceptions
     await removeException(domain);
@@ -65,14 +65,14 @@ function onCheckboxChange(e) {
   } else {
     delete e.target.cookieList[e.target.domain];
   }
-  e.target.button.disabled = (Object.keys(e.target.cookieList).length == 0) 
+  e.target.button.disabled = (Object.keys(e.target.cookieList).length == 0)
 }
 
 function clearDiv(divName) {
   var oldDiv = document.getElementById(divName);
   var div = document.createElement('div');
   div.id = divName;
-  oldDiv.parentNode.replaceChild(div, oldDiv); 
+  oldDiv.parentNode.replaceChild(div, oldDiv);
 }
 
 function displayCookieList(options) {
@@ -93,7 +93,7 @@ function displayCookieList(options) {
   if(cookieDomainKeys.length > 0) {
     var fragment = document.createDocumentFragment();
     var title = document.createElement('div');
-    title.textContent = text; 
+    title.textContent = text;
     title.style = "font-weight: bold;";
     fragment.appendChild(title);
     for(var configDomain of cookieDomainKeys) {
@@ -112,8 +112,8 @@ function displayCookieList(options) {
 }
 
 function createToggle(container, config, cookieAction, domain, domainNameSpan) {
-  //NB: Check the CSS for the input/label/i behaviour; TL;DR: checkbox is invisible, the label is 
-  // clickable (htmlFor), and the 'i' is the toggle button. End result is (misc attribs elided for brevity): 
+  //NB: Check the CSS for the input/label/i behaviour; TL;DR: checkbox is invisible, the label is
+  // clickable (htmlFor), and the 'i' is the toggle button. End result is (misc attribs elided for brevity):
   // <input id="foo"><label for="foo"><i></i></label> <span>$DOMAIN</span>
   var checked = domainInList(config, domain);
   var configDomain = domainIsAllowed(config, domain);
@@ -122,16 +122,16 @@ function createToggle(container, config, cookieAction, domain, domainNameSpan) {
   var checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.checked = checked;
-  checkbox.id = 'toggle-' + domain; 
-  checkbox.addEventListener('change', toggleException.bind(null, checkbox, domain)); 
+  checkbox.id = 'toggle-' + domain;
+  checkbox.addEventListener('change', toggleException.bind(null, checkbox, domain));
   container.appendChild(checkbox);
-  
+
   var label = document.createElement('label');
   label.htmlFor = 'toggle-' + domain; //Vital, otherwise clicks of the label don't get sent to the checkbox
 
   //Implied domains can never be out of state.
-  var outofstate = implied ? 
-      false : 
+  var outofstate = implied ?
+      false :
       (cookieAction == CookieActions.Allowed && !checked) || (cookieAction== CookieActions.Blocked && checked);
 
   if(outofstate) {
@@ -149,7 +149,7 @@ function createToggle(container, config, cookieAction, domain, domainNameSpan) {
   container.appendChild(document.createTextNode(' '));
 }
 
-//For use by 'sort', to sort domains by components preceding the public suffix, 
+//For use by 'sort', to sort domains by components preceding the public suffix,
 // e.g. in google.com vs microsoft.net, just sorts by google vs microsoft.
 // Produces a more natural looking sorting, as the sld is typically the organisation that
 // matters
@@ -221,7 +221,7 @@ function collectOtherCookies(hostname, tabInfo, domains) {
               }
             }
             if(Object.keys(filteredCookies).length > 0) {
-              targetHash[action][cookieDomain] = filteredCookies; 
+              targetHash[action][cookieDomain] = filteredCookies;
             }
           }
         }
@@ -238,7 +238,7 @@ function mergeCookieLists(a, b) {
   var result = {};
   for (var aKey of Object.keys(a)) {
     if(aKey in b) {
-      //aKey is in both a and b; merge the dictionaries 
+      //aKey is in both a and b; merge the dictionaries
       result[aKey] = Object.assign({}, a[aKey], b[aKey]);
     } else {
       result[aKey] = a[aKey];
@@ -262,7 +262,7 @@ function cookieInHash(hash, domain) {
         if ((cd == domain) || (cd == "."+domain)) {
           return true;
         }
-      } 
+      }
     }
   }
   return false;
@@ -301,7 +301,7 @@ async function render(force = false) {
 
   var hostnameContainer = document.getElementById('hostname');
   var hostname = new URL(tab.url).hostname
-  hostnameContainer.innerText = hostname; 
+  hostnameContainer.innerText = hostname;
 
   if(!force) {
     if(!tabInfo) {
@@ -334,23 +334,23 @@ async function render(force = false) {
     //No '.' in the string; just a plain hostname
     domainComponents = [hostname];
   }
-  
+
   clearDiv('primaryCookies');
   var fragment = document.createDocumentFragment();
 
   var partDomain = parsedHostname ? parsedHostname.tld : "";
   for(var dc of domainComponents) {
     partDomain = (partDomain == "") ? dc : (dc + "." + partDomain);
-    var icon = document.createElement('img');  
+    var icon = document.createElement('img');
     var action = CookieActions.Unset;
     if(cookieInHash(allowedObj.firstParty, partDomain) || cookieInHash(otherCookies.firstParty.allowed, partDomain)) {
       icon.src = "icons/cookies-allowed-32.png";
-      action = CookieActions.Allowed; 
+      action = CookieActions.Allowed;
     } else if (cookieInHash(blockedObj.firstParty, partDomain) || cookieInHash(otherCookies.firstParty.blocked, partDomain)) {
       icon.src = "icons/cookies-blocked-32.png";
       action = CookieActions.Blocked;
     } else {
-      icon.src = "icons/blank.png"; 
+      icon.src = "icons/blank.png";
     }
     icon.height = 16;
     icon.width = 16;
@@ -359,7 +359,7 @@ async function render(force = false) {
     var domainNameSpan = document.createElement('span');
     createToggle(fragment, config, action, partDomain, domainNameSpan);
     domainNameSpan.textContent = partDomain;
-    fragment.appendChild(domainNameSpan);  
+    fragment.appendChild(domainNameSpan);
     fragment.appendChild(document.createElement('br'));
   }
   var div = document.getElementById('primaryCookies');
@@ -369,23 +369,23 @@ async function render(force = false) {
   //Easier to have this be a closure than to extract it out to it's own method which will need to allll
   // the general setup (e.g. getting 'config', and the cookie lists);
   // Possibly only marginal usefulness though; the cookie collation may take longer than the DOM generation
-  // But this makes me feel good, so why not?! 
+  // But this makes me feel good, so why not?!
   thirdPartySectionGenerateFunction = function() {
     displayCookieList({
-      text: "Allowed"+(config.thirdParty == ThirdPartyOptions.AllowAll ? " (all, by policy)" : ""), 
+      text: "Allowed"+(config.thirdParty == ThirdPartyOptions.AllowAll ? " (all, by policy)" : ""),
       divName: 'allowedThirdPartyCookies',
       cookieDomains: mergeCookieLists(allowedObj.thirdParty, otherCookies.thirdParty.allowed),
       config: config,
-      action: CookieActions.Allowed, 
+      action: CookieActions.Allowed,
       showToggle: (config.thirdParty == ThirdPartyOptions.AllowIfOtherwiseAllowed),
     });
 
     displayCookieList({
-      text: "Blocked"+(config.thirdParty == ThirdPartyOptions.AllowNone ? " (all, by policy)" : ""), 
+      text: "Blocked"+(config.thirdParty == ThirdPartyOptions.AllowNone ? " (all, by policy)" : ""),
       divName: 'blockedThirdPartyCookies',
       cookieDomains: mergeCookieLists(blockedObj.thirdParty, otherCookies.thirdParty.blocked),
       config: config,
-      action: CookieActions.Blocked, 
+      action: CookieActions.Blocked,
       showToggle: (config.thirdParty == ThirdPartyOptions.AllowIfOtherwiseAllowed),
     });
 
@@ -487,7 +487,7 @@ async function contentLoaded() {
   checkCookieConfig();
   render();
   document.getElementById('thirdPartyTitle').addEventListener('click', toggleThirdParty);
-  window.setInterval(render, 500); 
+  window.setInterval(render, 500);
 }
 
 function toggleThirdParty(e) {
@@ -503,7 +503,7 @@ function toggleThirdParty(e) {
   var img = document.getElementById('thirdPartyArrow')
   var newDir = (currVal == 'block' ? 'right' : 'down');
   img.src="../icons/arrow-"+newDir+".png";
-    
+
 }
 
 
