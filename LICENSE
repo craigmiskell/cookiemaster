@@ -25,7 +25,7 @@ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
 CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 =======================================================================
 psl.min.js from https://github.com/wrangr/psl, licensed under the MIT license
@@ -42,7 +42,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 ======================================================================
 Icons derived/modified from the Mint-Y icon set: https://github.com/linuxmint/mint-y-icons
-License: Creative Commons Attribution-ShareAlike 4.0 (CC-BY-SA-4) 
+License: Creative Commons Attribution-ShareAlike 4.0 (CC-BY-SA-4)
 Original Copyright: 2015 Sam Hewitt <sam@snwh.org>, Alexey Varfolomeev
 
 ======================================================================
@@ -105,5 +105,8 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-
+=======================================================================
+Cookie icons (icons/cookies-*, cookies-source.xcf)
+Copyright https://github.com/ArcticGems
+CC0 1.0 Universal (CC0 1.0)
+Public Domain Dedication

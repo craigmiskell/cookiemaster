@@ -7,42 +7,44 @@
 <h1>Introduction</h1>
 CookieMaster is a WebExtension for Firefox that aims to provide <em>control</em> of cookies to ordinary users.  It is inspired by the old pre-WebExtensions add-on called CookieMonster, although with some necessary differences for being a WebExtension, and that I wrote it from scratch.
 <h1>About cookies</h1>
-Cookies are divided into two types: first-party, and third-party.  First-party are where the cookie is for the page you are browsing (or iframe that is loading), e.g. if you're browsing www.mozilla.org, then any cookies for mozilla.org are 'First Party'.  Third-party are cookies set by requests for additional resources from <em>other</em> domains, e.g. if you're browsing www.cnn.com and it loads an image from doubleclick.net to serve and advert, and that image request tries to set a cookie, that's a third-party cookie.<br>
+Cookies are divided into two types: first-party, and third-party.  First-party are where the cookie is for the page you are browsing (or iframe that is loading), e.g. if you're browsing www.mozilla.org, then any cookies for mozilla.org are 'First Party'.  Third-party are cookies set by requests for additional resources from <em>other</em> domains, e.g. if you're browsing www.cnn.com and it loads an image from doubleclick.net to serve an advert, and that image request tries to set a cookie, that's a third-party cookie.<br>
 <br>
-For first-party cookies, CookieMaster assumes that if you haven't explicitly allowed them, then they should be blocked.  If you want cookies for that site, you need to interact with CookieMaster to tell it so (see below, in "How to use CookieMaster".<br>
+For first-party cookies, CookieMaster assumes that if you haven't explicitly allowed them, then they should be blocked.  If you want cookies for that site, you need to interact with CookieMaster to tell it so (see below, in "How to use CookieMaster").<br>
 <br>
-For third-party cookies, the default assumption is that you do not want to allow any.  However, to allow for other behaviours, you can also set it to either allow all third-party cookies (definitely not recommended), or to allow third-party cookies only if the domain has been explicitly added to CookieMaster's list (the same list as is used for first-party cookies).  If you're using CookieMaster because you want to limit cookies, you're probably going to want to keep the default setting.<br>
+For third-party cookies, the default assumption is that you do not want to allow any.  However, to allow for other behaviours, you can also set it to
+<ul>
+<li>Allow third-party cookies only if the domain has been explicitly added to CookieMaster's list (the same list as is used for first-party cookies), or
+<li>Allow all third-party cookies (definitely not recommended)
+</ul>
+If you're using CookieMaster because you want to limit cookies, you're probably going to want to keep the default setting, although Firefox is getting very good at blocking tracking cookies these days so feel free to experiment.<br>
 <br>
-It's also important to know that cookies take effect for sub-domains, e.g. a cookie set for "example.com" will be used for any requests to "www.example.com", "test.example.com", "foo.bar.example.com" and so-on.  And in CookieMaster, allowing cookies for a higher level domain (e.g. example.com) implicitly allows cookies for any subdomains (e.g. www.example.com)
+You should know that cookies take effect for sub-domains, e.g. a cookie set for "example.com" will be used for any requests to "www.example.com", "test.example.com", "foo.bar.example.com" and so-on.  Therefore in CookieMaster allowing cookies for a higher level domain (e.g. example.com) implicitly allows cookies for any subdomains (e.g. www.example.com)
 
 <h1>How to use CookieMaster <img src="icons/cookies-32.png"></h1>
 <h2>Configuration requirements</h2>
-CookieMaster inserts itself into the cookie processing at a couple of control points to block/delete cookies that have not been allowed.  If a cookie <em>is</em> allowed, CookieMaster simply does nothing and lets Firefox do it's normal cookie handling.  Therefore, you almost definitely want to have Firefox's cookie settings configured to "Accept cookies from websites", and possibly want "Accept third-party cookies" to something other than "Never".  CookieMaster tries to alert you if your settings might lead to unexpected results, but it's worth checking at least once that your general Cookie settings are how they should be.
+CookieMaster inserts itself into the cookie processing at a couple of control points to block cookies that have not been allowed.  If a cookie <em>is</em> allowed, CookieMaster simply does nothing and lets Firefox do it's normal thing.  Therefore, you almost definitely want to have Firefox's cookie settings configured to "Accept cookies from websites", and possibly want "Accept third-party cookies" to something other than "Never".  CookieMaster tries to alert you if your settings might lead to unexpected results, but it's worth checking at least once that your general Cookie settings are how they should be.  With the latest versions of Firefox, it's possible for CookieMaster to allow a cookie, but for Firefox to then block it as a tracking cookie.
 <h2>Usage</h2>
 CookieMaster presents as an icon in your Toolbar menu; when you click on it, a small popup/dropdown menu appears, that may look something like this:<br>
 <p style="text-align:center"><img src="help/popup-menu1.png"></p><br>
 In this case, I have visited www.example.com, and because I haven't specifically allowed it, cookies for www.example.com and example.com are both blocked.  However, this site has not even <em>tried</em> to set cookies.  Let's say I'm visiting https://edition.cnn.com/, and I click on the CookieMaster icon:<br>
 <p style="text-align:center"><img src="help/popup-menu2.png"></p><br>
-Notice how this time there is a blocked cookie icon to the left of the two domains (cnn.com and edition.cnn.com).  This indicates that CNN tried to set cookies for both "cnn.com", and "edition.cnn.com", and both were blocked.<br>
+Notice how this time there is a blocked cookie icon to the left of the edition.cnn.com domain.  This indicates that CNN tried to set cookies for "edition.cnn.com" and it was blocked, and has not attempted to set any for "cnn.com.".  Note also that the CookieMaster icon has two red dots.  The left hand side is First Party cookies, the right is Third Party.  Red means that one or more cookies of that type were blocked, green means that all cookies of that type were allowed, and blue means 'mixed' (some allowed, some blocked).<br>
 <br>
-My options here are varied.  I might decide that I trust all of CNN, and want to allow any cookies from cnn.com and any sub-domains.  To do that, I'd click on the red toggle for 'cnn.com', turning it green.  It would then look like this:<br>
+My options here are varied.  I might decide that I trust all of CNN, and want to allow any cookies from cnn.com and any sub-domains.  To do that, I'd click on the red toggle for "cnn.com", turning it green.  It would then look like this:<br>
 <p style="text-align:center"><img src="help/popup-menu3.png"></p><br>
-There's a lot going on here.  First up, notice that the "cnn.com" toggle is now green, with a tick.  This says that when cnn.com next tries to set a cookie, it will be allowed.  However, the last time it tried it was blocked, so the blocked cookie icon is still there, and the domain name is in italics indicating there's a mismatch of allowed domains to what has happened (we'll see a bit later what happens after a cookie is successfully set).  Secondly, notice what's happened to "edition.cnn.com".  Remember earlier where we talked about sub-domains?  This is where the rubber hits the road.  Because I've allowed "cnn.com", I have implicitly allowed "edition.cnn.com", and any other sub-domains of "cnn.com".  The toggle now shows in the middle, with a tick, and gray.  This indicates that cookies will be allowed for "edition.cnn.com", but the reason is because it's implied by "cnn.com" being allowed, not because I explicitly chose to allow "edition.cnn.com".<br>
+There's a lot going on here.  First up, notice that the "cnn.com" toggle is now green, with a tick.  This says that when cnn.com next tries to set a cookie, it will be allowed.  Notice what's happened to "edition.cnn.com".  Remember earlier where we talked about sub-domains?  Because I've allowed "cnn.com", I have implicitly allowed "edition.cnn.com", and any other sub-domains of "cnn.com".  The toggle now shows in the middle, with a tick, and gray.  This indicates that cookies will be allowed for "edition.cnn.com", but the reason is because it's implied by "cnn.com" being allowed, not because I explicitly chose to allow "edition.cnn.com".  Not however that the 'cookie blocked' icon is still there; the page has not attempted to set a cookie since we allowed it, so the last record we have was a blocked cookie.<br>
 <br>
 I then reload the page (although this might not be necessary; many sites will have Javascript that fetches resources that will trigger a cookie set, or explicitly set cookies from Javascript itself), and the popup will now look more like this:<br>
 <p style="text-align:center"><img src="help/popup-menu4.png"></p><br>
-Now cookies have been set for both "cnn.com" and "edition.cnn.com", as indicated by the cookie icon with a green tick, on the left.  The italics are gone, because the cookie state matches what was allowed at the time.<br>
+Now cookies have been set for both "cnn.com" and "edition.cnn.com", as indicated by the cookie icon with a green tick, on the left. However you may notice that CookieMaster icon has a <em>blue</em> dot for First Party cookies.  This is because there some first party cookies were allowed, and some were blocked.  But clearly both "cnn.com" domains have been allowed.  What's going on?  In a word, <a href="https://whatis.techtarget.com/definition/IFrame-Inline-Frame">iframes</a>.  The link has more detail, but in short, an iframe is an HTML page embedded in it's own frame inside another HTML page.  The pages are somewhat isolated from each other for security, but this also means that any cookies set by the iframe page, for the domain of the iframe, are considered First Party cookies.<br>. 
 <br>
-What else can we do?  Well, I might decide that I trust "edition.cnn.com", but not everything else from "cnn.com".  To do that I'd toggle "cnn.com" back to blocked, and toggle "edition.cnn.com" on.  After a quick reload, the popup will now look like this:<br>
-<p style="text-align:center"><img src="help/popup-menu5.png"></p><br>
-It should be pretty obvious that "cnn.com" tried to set a cookie but was denied, and "edition.cnn.com" tried and was allowed.<br>
-While the possibilities get a little more complicated if you've got a multi-level domain like "foo.bar.example.com", the basics are just the same, and should be fairly self-explanatory.<br>
-<br>
-Third party cookies are shown in the "Other Cookies" section, which can be expanded by clicking anywhere on that line.  You might end up with something like this:<br>
-<p style="text-align:center"><img src="help/popup-menu6.png"></p><br>
+How do we see them?  If I click on 'Other Cookies', and I'll see something like this:<br>
+<p style="text-align:center"><img src="help/popup-menu4a.png"></p><br>
+Here you can see that there were a number of iframes on the page, curiously including one for edition.cnn.com (for which the cookie was obviously allowed), and then 5 others for which the cookie was blocked.  This is why the First Party dot is <em>blue</em>.  Note that you can toggle whether cookies for those domains are allowed/blocked just as you can in the top section.<br>
+Third party cookies are also shown in the "Other Cookies" section<br>
 With the Block All third-party policy in force, this is just a list of the third-party cookies that were blocked.  This is mainly informational.  If I change the third-party policy (in the Add-ons preference pages) to 'Allow only if explicitly permitted', then the popup will look something like this:<br>
 <p style="text-align:center"><img src="help/popup-menu7.png"></p><br>
-Notice how the third-party cookies now have toggles as well; these work exactly like toggles for first-party cookies that we're already familiar.  In this case, however, we don't show the blocked/allowed cookie icon on the left; rather, the third-party cookies are sorted into two sections.  Having allowed "bing.com" and reloading, the popup now looks like this:<br> 
+Notice how the third-party cookies now have toggles as well; these work exactly like toggles for first-party cookies that we're already familiar.  In this case, however, we don't show the blocked/allowed cookie icon on the left; rather, the third-party cookies are sorted into two sections.  Having allowed "doubleclick.net" and reloading, the popup now looks like this:<br> 
 <p style="text-align:center"><img src="help/popup-menu8.png"></p><br>
 <h1>How to use preferences</h1>
 To change preferences, and see the entire list of domains that have been permitted, goto "about:addons", or via the Firefox hamburger menu, click 'Add-ons'.  Click the 'Preferences' button for CookieMaster.<br>
@@ -55,13 +57,13 @@ To remove one (or more), select them in the list box and click 'Remove Selected'
 <h1>How it works</h1>
 You don't <em>need</em> to know this, but if you're interested, here's a high level view of how CookieMaster works.<br>
 <br>
-Cookies can be set in two ways, by headers in an HTTP response, or from Javascript, using <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie">Document.cookie</a>.  CookieMaster takes care of the headers by <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/webRequest/onHeadersReceived">hooking</a> into the HTTP response process and removing any Set-Cookie headers that shouldn't be allowed based on the user-chosen policy + allow-list.  Cookies set by Javascript are noticed by <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/cookies/onChanged">hooking</a> into the cookie change API.  This doesn't allow for <em>preventing</em> the cookie from being set, so we have to settle for deleting it immediately after.  Sadly this means it's not guaranteed that the cookie won't be sent to the remote server; it's entirely possible that the cookie could be set and a request made before our call-back hook is executed.  But the chances are relatively low.  It would theoretically be possible to <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/webRequest/onBeforeSendHeaders">hook</a> into the HTTP request process and remove cookie headers for domains that aren't allowed, but that adds a good chunk of code to cover an obscure corner case.  The fact that the original cookie was deleted immediately should go some way towards minimising tracking opportunities.<br>
+Cookies can be set in two ways, by headers in an HTTP response, or from Javascript, using <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie">Document.cookie</a>.  CookieMaster takes care of the headers by <a href="https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/webRequest/onHeadersReceived">hooking</a> into the HTTP response process and removing any Set-Cookie headers that shouldn't be allowed based on the user-chosen policy + allow-list.  Cookies set by Javascript are noticed by hooking into the cookie property setter (using a content script), and prevented from being set if the CookieMaster policy demands that.<br> 
 <br>
-Interestingly (perhaps), the actual blocking/allowing code was trivial.  The hard bit was (and is) a vaguely sensible UI, and tracking which tab a cookie was set for.  In particular, the cookie onChanged hook does <em>not</em> tell you which tab was involved in setting the cookie.  See <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1416548">https://bugzilla.mozilla.org/show_bug.cgi?id=1416548</a> for where I asked that it be added, although unless I can learn deep details about Firefox code, is unlikely to happen anytime soon.<br>
+Interestingly (perhaps), the actual blocking/allowing code was trivial.  The hard bit was (and is) a vaguely sensible UI<br>
 <br>
 It's worth pointing out here that cookies are far from the only way you can be tracked on-line, and a determined third party can probably still track you if they're willing to put in enough effort.
-<h1>Why is this document so ugly?  Why are the icons awful?</h1>
-Because I'm not a graphical designer; I'm a sysadmin with delusions of coding ability.  If you'd like to contribute some patches/updates to make it look less terrible, I would be delighted.
+<h1>Why is this document so ugly?  Why is the UI layout awful?</h1>
+Because I'm not a graphical designer; I'm a sysadmin with delusions of coding ability.  If you'd like to contribute some patches/updates to make it look less terrible, I would be delighted.  The icons have had a nice refresh/makeover already because someone took the time to help out, and I am deeply grateful
 <h1>Source</h1>
 <a href="https://github.com/craigmiskell/cookiemaster">https://github.com/craigmiskell/cookiemaster</a><br>
 Bug reports, patches, or other contributions are all gratefully received.
@@ -81,6 +83,11 @@ Copyright (c) 2017 Lupo Montero <a href="mailto:lupomontero@gmail.com">lupomonte
 Icons derived/modified from the Mint-Y icon set: https://github.com/linuxmint/mint-y-icons<br>
 License: Creative Commons Attribution-ShareAlike 4.0 (CC-BY-SA-4) <br>
 Original Copyright: 2015 Sam Hewitt <a href="mailto:sam@snwh.org">sam@snwh.org</a>, Alexey Varfolomeev
+<hr>
+Updated icons:
+Copyright https://github.com/ArcticGems
+CC0 1.0 Universal (CC0 1.0)
+Public Domain Dedication
 <hr>
 <br>
 </body>

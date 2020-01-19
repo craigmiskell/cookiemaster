@@ -2,11 +2,6 @@ HOW TO RELEASE:
 
 Edit manifest.json, updating the version number
 
-From the top level of the repo:
-VERSION=$(cat manifest.json |jq .version|tr -d \")
-zip -r ../cookie-master-${VERSION}.zip  . -x .git/\* .gitignore
+web-ext build -s . -a ../ -i .git .gitignore icons/*.xcf
 
 Upload this zip file to addons.mozilla.org
-
-
-

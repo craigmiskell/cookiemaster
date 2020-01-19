@@ -8,7 +8,7 @@
       "strict_min_version": "59.0"
     }
   },
-  "version": "1.0.9",
+  "version": "1.1.0",
   "description": "Allows user control of whether cookies may be set, on a per-domain basis.",
 
     "icons": {
@@ -27,7 +27,7 @@
     "webNavigation",
     "webRequest",
     "webRequestBlocking"
-    
+
   ],
   "browser_action": {
     "browser_style": true,
@@ -35,8 +35,19 @@
     "default_title": "CookieMaster",
     "default_popup": "popup.html"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "all_frames": true,
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
   "background": {
-    "scripts": ["tough-cookie.js", "cookie-parse.js", "config.js", "background.js"]
+    "scripts": ["tough-cookie.js", "cookie-parse.js", "data-objects.js", "config.js", "background.js"]
   },
   "options_ui": {
     "page": "options.html",

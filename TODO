@@ -1,3 +1,5 @@
+VERIFY that private mode works with the new TabInfo object being passed around (particularly maps)
+
 Cookie-preference checking:
   Install-time warning if config is out of state.
   Uninstall warning: could only be generic, leaks state (possibly), and is probably not desirable.  Consider.
@@ -10,4 +12,3 @@ Consider setting the pageAction icons based on allowed/blocked for first party c
     This will require noticing when the active tab changes and updating.
 
 Convert the uses of plain javascript objects to Map, where possible
-

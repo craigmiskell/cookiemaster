@@ -39,3 +39,9 @@
 2019-04-13 - version 1.0.9 release
   Changes:
     Fix private browsing removal of javascript-set cookies
+
+2020-01-XX - version 1.1.0 release
+  Changes:
+    Badge-like behaviour on the popup button to show when first or third-party cookies are allowed/blocked (or if it's a mixed bag)
+    Better handling of cookies set by javascript; much less guesswork now, more reliable
+    Now shows first party cookies set in iframes, and toggle allow/block on same, from the status popup

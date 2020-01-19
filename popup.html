@@ -3,6 +3,7 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="bootstrap.min.css">
     <link rel="stylesheet" href="popup.css"/>
+    <script src="data-objects.js"></script>
     <script src="config.js"></script>
     <script src="psl.min.js"></script>
     <script src="popup.js"></script>
@@ -16,8 +17,10 @@
     </div>
     <br style="line-height: 0.5">
     <div style="background:hsl(0,0%,98%)">
-      <div id="thirdPartyTitle" style="font-weight:bold"><img id="thirdPartyArrow" src="../icons/arrow-right.png" height="15" width="15">Other Cookies:</div>
+      <div id="otherCookiesTitle" style="font-weight:bold"><img id="otherCookiesArrow" src="../icons/arrow-right.png" height="15" width="15">Other Cookies:</div>
       <div id="thirdPartyWrapper" style="display:none">
+        <div id="allowedFirstPartyCookiesIFrame"></div>
+        <div id="blockedFirstPartyCookiesIFrame"></div>
         <div id="allowedThirdPartyCookies"></div>
         <div id="blockedThirdPartyCookies"></div>
       </div>

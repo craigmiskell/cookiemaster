@@ -16,6 +16,8 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+var emptyMap = new Map();
+
 async function saveConfig(config) {
   await browser.storage.local.set({
     thirdParty: config.thirdParty,
@@ -83,7 +85,7 @@ function displayCookieList(options) {
   var action = options.action;
   var showToggle = options.hasOwnProperty('showToggle') ? options.showToggle : true;
 
-  var cookieDomainKeys = Object.keys(cookieDomains).sort(compareDomains);
+  var cookieDomainKeys = Array.from(cookieDomains.keys()).sort(compareDomains);
 
   //Replace the div with an empty one as a quick way to nerf any children.
   clearDiv(divName);
@@ -97,7 +99,8 @@ function displayCookieList(options) {
     title.style = "font-weight: bold;";
     fragment.appendChild(title);
     for(var configDomain of cookieDomainKeys) {
-      for (var d of Object.keys(cookieDomains[configDomain]).sort(compareDomains)) {
+      var keys = Array.from(cookieDomains.get(configDomain));
+      for (var d of keys.sort(compareDomains)) {
         var domainNameSpan = document.createElement('span');
         if(showToggle) {
           createToggle(fragment, config, action, d, domainNameSpan);
@@ -177,88 +180,13 @@ function compareDomains(a, b) {
   return abits.length - bbits.length;
 }
 
-function categoriseCookies(cookieHash, hostname) {
-  var firstParty = {};
-  var thirdParty = {};
-  for (var d of Object.keys(cookieHash)) {
-    if(hostname.endsWith(d)) {
-      firstParty[d] = cookieHash[d];
-    } else {
-      thirdParty[d] = cookieHash[d];
-    }
+function cookieSeenForDomain(store, domain) {
+  if (!store) {
+    return false;
   }
-  return {
-    'firstParty': firstParty,
-    'thirdParty': thirdParty,
-  }
-}
-
-function collectOtherCookies(hostname, tabInfo, domains) {
-  var firstParty = {
-    allowed: [],
-    blocked: [],
-  };
-  var thirdParty = {
-    allowed: [],
-    blocked: [],
-  };
-
-  for (var fetched of Object.keys(tabInfo.domainsFetched)) {
-    for (var cookieDomain of Object.keys(domains)) {
-      if (fetched.endsWith(cookieDomain)) {
-        var domainInfo = domains[cookieDomain];
-        for(var action of ['blocked', 'allowed']) {
-          if(action in domainInfo) {
-            var targetHash = hostname.endsWith(cookieDomain) ? firstParty : thirdParty;
-            //Only include cookies that have been updated *since* this tabInfo was created.
-            // Otherwise we notice cookies blocked/allowed from previous page-loads, potentially
-            // before we changed the allow/deny state for a domain, which is pants
-            var allCookies = domainInfo[action];
-            var filteredCookies = { };
-            for(var d of Object.keys(allCookies)) {
-              if(allCookies[d] >= tabInfo.created) {
-                filteredCookies[d] = allCookies[d];
-              }
-            }
-            if(Object.keys(filteredCookies).length > 0) {
-              targetHash[action][cookieDomain] = filteredCookies;
-            }
-          }
-        }
-      }
-    }
-  }
-  return {
-    'firstParty': firstParty,
-    'thirdParty': thirdParty,
-  }
-}
-
-function mergeCookieLists(a, b) {
-  var result = {};
-  for (var aKey of Object.keys(a)) {
-    if(aKey in b) {
-      //aKey is in both a and b; merge the dictionaries
-      result[aKey] = Object.assign({}, a[aKey], b[aKey]);
-    } else {
-      result[aKey] = a[aKey];
-    }
-  }
-  for(var bKey of Object.keys(b)) {
-    if(!(bKey in result)) {
-      //bKey wasn't in a, so wasn't merged; jam it in
-      result[bKey] = b[bKey];
-    }
-  }
-  return result;
-}
-
-//Temporary, until we confirm new UI, and revert data collection to just cookie domain
-// and stop caring which configured domain allowed it. Maybe?
-function cookieInHash(hash, domain) {
-  for (var d of Object.keys(hash)) {
+  for (var d of store.keys()) {
     if(domain.endsWith(d)) {
-      for(var cd of Object.keys(hash[d])) {
+      for(var cd of store.get(d).keys()) {
         if ((cd == domain) || (cd == "."+domain)) {
           return true;
         }
@@ -268,11 +196,42 @@ function cookieInHash(hash, domain) {
   return false;
 }
 
-//Blech.  Alternatives accepted
+//Blech.  Alternatives accepted to global vars like this
 var thirdPartySectionGenerated = false;
 var thirdPartySectionGenerateFunction;
 var lastUpdated = 0;
 var rendering = false;
+
+function collectFrameCookies(store) {
+  var result = new Map()
+  for (frameInfo of store) {
+    if(frameInfo[0] == 0) {
+      //Primary frame dealt with separately)
+      continue
+    }
+    // console.log("Frameid:"+frameInfo[0]);
+    for(cookieInfo of frameInfo[1]) {
+      var configDomain = cookieInfo[0];
+      var cookieDomains = cookieInfo[1]; // A Set
+      // console.log("This frame has a configDomain of "+configDomain);
+      var mergedCookieInfo = result.get(configDomain);
+      if(!mergedCookieInfo) {
+        // console.log("No existing set for this configDomain; creating one");
+        mergedCookieInfo = new Set();
+        result.set(configDomain, mergedCookieInfo);
+      }
+      for (c of cookieDomains) {
+        if(mergedCookieInfo.has(c)) {
+          // console.log(c+" is already in the set");
+        } else {
+        // console.log("Adding "+c+" to the configDomain "+configDomain);
+        mergedCookieInfo.add(c);
+        }
+      }
+    }
+  }
+  return result;
+}
 
 async function render(force = false) {
   if(rendering) {
@@ -285,19 +244,17 @@ async function render(force = false) {
 
   var tabs = await browser.tabs.query({active: true, currentWindow: true});
   var tab = tabs[0];
-  var tabInfo = await browser.runtime.sendMessage({
-    "name": "getTabsInfo",
-    "tabId": tab.id
-  });
-
-  var domains = await browser.runtime.sendMessage({
-    "name": "getDomains",
-  });
 
   if(!tab.url.startsWith('http')) {
     document.body.innerHTML = "<em>Not an HTTP(S) page</em>";
     return;
   }
+
+  var tabInfoObj = await browser.runtime.sendMessage({
+    "name": "getTabsInfo",
+    "tabId": tab.id
+  });
+  var tabInfo = TabInfo.fromObject(tabInfoObj);
 
   var hostnameContainer = document.getElementById('hostname');
   var hostname = new URL(tab.url).hostname
@@ -309,21 +266,15 @@ async function render(force = false) {
       rendering = false;
       return;
     }
-    if((tabInfo.updated < lastUpdated && domains.updated < lastUpdated)) {
+    if(tabInfo.updated < lastUpdated) {
       //Nothing has changed; no need to redisplay anything
       rendering = false;
       return;
     }
   }
   lastUpdated = Date.now();
-  var allowedObj = categoriseCookies(tabInfo.cookieDomainsAllowed, hostname);
-  var blockedObj = categoriseCookies(tabInfo.cookieDomainsBlocked, hostname);
-  var otherCookies = collectOtherCookies(hostname, tabInfo, domains);
-  /*console.log(allowedObj);
-  console.log(blockedObj);
-  console.log(otherCookies);
-*/
-  var domainComponents = []
+
+  var domainComponents = [];
   if(hostname.includes('.')) {
     var parsedHostname = psl.parse(hostname);
     domainComponents.push(parsedHostname.sld);
@@ -343,10 +294,11 @@ async function render(force = false) {
     partDomain = (partDomain == "") ? dc : (dc + "." + partDomain);
     var icon = document.createElement('img');
     var action = CookieActions.Unset;
-    if(cookieInHash(allowedObj.firstParty, partDomain) || cookieInHash(otherCookies.firstParty.allowed, partDomain)) {
+    //Frameid 0 is the top level frame (by definition)
+    if(cookieSeenForDomain(tabInfo.allowedFirstPartyDomains.get(0), partDomain)) {
       icon.src = "icons/cookies-allowed-32.png";
       action = CookieActions.Allowed;
-    } else if (cookieInHash(blockedObj.firstParty, partDomain) || cookieInHash(otherCookies.firstParty.blocked, partDomain)) {
+    } else if (cookieSeenForDomain(tabInfo.blockedFirstPartyDomains.get(0), partDomain)) {
       icon.src = "icons/cookies-blocked-32.png";
       action = CookieActions.Blocked;
     } else {
@@ -366,30 +318,53 @@ async function render(force = false) {
   div.appendChild(fragment);
 
 
-  //Easier to have this be a closure than to extract it out to it's own method which will need to allll
-  // the general setup (e.g. getting 'config', and the cookie lists);
-  // Possibly only marginal usefulness though; the cookie collation may take longer than the DOM generation
-  // But this makes me feel good, so why not?!
+  // Easier to have this be a closure than to extract it out to it's own method which will need to allll
+  //  the general setup (e.g. getting 'config', and the cookie lists);
+  //  Possibly only marginal usefulness though; the cookie collation may take longer than the DOM generation
+  //  But this makes me feel like a real programmer, so why not?!
   thirdPartySectionGenerateFunction = function() {
+    var blockedFrameCookies = collectFrameCookies(tabInfo.blockedFirstPartyDomains)
+    var allowedFrameCookies = collectFrameCookies(tabInfo.allowedFirstPartyDomains)
+
     displayCookieList({
-      text: "Allowed"+(config.thirdParty == ThirdPartyOptions.AllowAll ? " (all, by policy)" : ""),
+      text: "Blocked in an iframe",
+      divName: 'blockedFirstPartyCookiesIFrame',
+      cookieDomains: blockedFrameCookies,
+      config: config,
+      action: CookieActions.Blocked,
+      showToggle: true,
+    });
+
+    displayCookieList({
+      text: "Allowed in an iframe",
+      divName: 'allowedFirstPartyCookiesIFrame',
+      cookieDomains: allowedFrameCookies,
+      config: config,
+      action: CookieActions.Allowed,
+      showToggle: true,
+    });
+
+
+
+    displayCookieList({
+      text: "Allowed 3rd party"+(config.thirdParty == ThirdPartyOptions.AllowAll ? " (all, by policy)" : ""),
       divName: 'allowedThirdPartyCookies',
-      cookieDomains: mergeCookieLists(allowedObj.thirdParty, otherCookies.thirdParty.allowed),
+      cookieDomains: tabInfo.allowedThirdPartyDomains.get(0) || emptyMap,
       config: config,
       action: CookieActions.Allowed,
       showToggle: (config.thirdParty == ThirdPartyOptions.AllowIfOtherwiseAllowed),
     });
 
     displayCookieList({
-      text: "Blocked"+(config.thirdParty == ThirdPartyOptions.AllowNone ? " (all, by policy)" : ""),
+      text: "Blocked 3rd party"+(config.thirdParty == ThirdPartyOptions.AllowNone ? " (all, by policy)" : ""),
       divName: 'blockedThirdPartyCookies',
-      cookieDomains: mergeCookieLists(blockedObj.thirdParty, otherCookies.thirdParty.blocked),
+      cookieDomains: tabInfo.blockedThirdPartyDomains.get(0)  || emptyMap,
       config: config,
       action: CookieActions.Blocked,
       showToggle: (config.thirdParty == ThirdPartyOptions.AllowIfOtherwiseAllowed),
     });
 
-    if((allowedObj.thirdParty.length == 0) && (blockedObj.thirdParty.length == 0)) {
+    if((tabInfo.allowedThirdPartyDomains.size == 0) && (tabInfo.blockedThirdPartyDomains.size == 0)) {
       document.getElementById('thirdPartyWrapper').innerHTML="No third-party cookies";
     }
   }
@@ -475,7 +450,6 @@ async function checkCookieConfig() {
 }
 
 function openHelp(e) {
-  console.log("opening help");
   browser.tabs.create({
     active: true,
     url: browser.extension.getURL("help.html")
@@ -486,7 +460,7 @@ async function contentLoaded() {
   document.getElementById('helplink').addEventListener('click', openHelp);
   checkCookieConfig();
   render();
-  document.getElementById('thirdPartyTitle').addEventListener('click', toggleThirdParty);
+  document.getElementById('otherCookiesTitle').addEventListener('click', toggleThirdParty);
   window.setInterval(render, 500);
 }
 
@@ -500,7 +474,7 @@ function toggleThirdParty(e) {
   var currVal = el.style.display;
   el.style.display = (currVal == 'block' ? 'none' : 'block');
 
-  var img = document.getElementById('thirdPartyArrow')
+  var img = document.getElementById('otherCookiesArrow')
   var newDir = (currVal == 'block' ? 'right' : 'down');
   img.src="../icons/arrow-"+newDir+".png";
 

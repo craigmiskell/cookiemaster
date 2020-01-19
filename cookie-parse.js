@@ -48,7 +48,7 @@ function cookieparse(str, options) {
       // The original behaviour of this method was to use the cookie name as the key
       // which ran the risk of conflicts with the known Attribute names from the RFC
       obj['name'] = key;
-      obj['value'] = val; 
+      obj['value'] = val;
     } else {
       //An attribute.  All attribute names are case-insensitive, so lower-case them here to make life easier for everyone
       key = key.toLowerCase();
