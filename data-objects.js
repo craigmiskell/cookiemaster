@@ -87,10 +87,6 @@ class TabInfo {
       store.set(frameId, frameData);
     }
 
-    if(!configDomain) {
-      console.log("UNdefined config domain... wtf?");
-      console.trace();
-    }
     var cd = frameData.get(configDomain);
     if(!cd) {
       cd = new Set();
@@ -100,7 +96,6 @@ class TabInfo {
   }
 
   registerAllowedFirstPartyCookie(cookieDomain, configDomain, frameId) {
-    console.trace();
     this._registerCookie(this._allowedFirstPartyDomains, cookieDomain, configDomain, frameId);
   }
   registerAllowedThirdPartyCookie(cookieDomain, configDomain, frameId) {
