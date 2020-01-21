@@ -456,8 +456,16 @@ function openHelp(e) {
   });
 }
 
+function openSettings(e) {
+  browser.tabs.create({
+    active: true,
+    url: browser.extension.getURL("options.html")
+  });
+}
+
 async function contentLoaded() {
   document.getElementById('helplink').addEventListener('click', openHelp);
+  document.getElementById('settingslink').addEventListener('click', openSettings);
   checkCookieConfig();
   render();
   document.getElementById('otherCookiesTitle').addEventListener('click', toggleThirdParty);
