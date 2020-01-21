@@ -242,13 +242,14 @@ async function headersReceived(details) {
   return {responseHeaders: filteredResponseHeaders};
 }
 
+var cookieDateParser = new CookieDateParser();
 // Inspects the expires and max-age attribute values of the cookie
 // and returns true if either of those are set in a way that means the cookie
 // should be deleted (not set)
 function cookieIsBeingDeleted(cookie, date = new Date()) {
   var expires;
   if(cookie.hasOwnProperty('expires')) {
-    expires = parseDate(cookie['expires'])
+    expires = cookieDateParser.parseDate(cookie['expires'])
     //NB: may still be undefined if the expires av is malformed, this is fine
   }
   //Will be false if 'expires' is undefined.

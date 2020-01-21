@@ -2,6 +2,6 @@ HOW TO RELEASE:
 
 Edit manifest.json, updating the version number
 
-web-ext build -s . -a ../ -i .git .gitignore icons/*.xcf
+web-ext build -s . -a ../ -i .git .gitignore icons/*.xcf tests/
 
 Upload this zip file to addons.mozilla.org
