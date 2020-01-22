@@ -19,6 +19,7 @@
     "http://*/*",
     "https://*/*",
     "cookies",
+    "downloads",
     "notifications",
     "privacy",
     "storage",

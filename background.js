@@ -30,7 +30,7 @@ function handleMessage(message, sender, sendResponse) {
     case "scriptedCookieSet":
       sendResponse(scriptedCookieSet(cookieparse(message.value), sender.tab.id, sender.frameId, sender.url));
       break;
-  }
+    }
 }
 
 function parseCookies(setCookieHeader) {

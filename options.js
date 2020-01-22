@@ -1,7 +1,7 @@
 /*
   Copyright 2017 Craig Miskell
 
-  This file is part of CookieMaster, a Firefox Web Extension 
+  This file is part of CookieMaster, a Firefox Web Extension
   CookieMaster is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 function saveOptions() {
@@ -21,7 +21,7 @@ function saveOptions() {
   var allowList = [];
   for (var option of allowListSelect.options) {
     allowList.push(option.value);
-  } 
+  }
   var ignoreSettingsWarning = document.querySelector("#ignoreSettingsWarning").checked
   browser.storage.local.set({
     thirdParty: document.querySelector("#thirdParty").value,
@@ -40,7 +40,7 @@ function addDomainToDisplayList(domain) {
   for(var option of allowListSelect.options) {
     if(option.value > domain) {
       //This is the first option in the list which sorts lexically after the new one
-      // so insert immediately before the it 
+      // so insert immediately before the it
       allowListSelect.add(newOption, option);
       return;
     }
@@ -51,7 +51,7 @@ function addDomainToDisplayList(domain) {
 
 function displayOptions() {
   getConfig().then((config) => {
-    document.querySelector("#thirdParty").value = config.thirdParty; 
+    document.querySelector("#thirdParty").value = config.thirdParty;
     for (var domain of config.allowList) {
       addDomainToDisplayList(domain);
     }
@@ -62,7 +62,7 @@ function displayOptions() {
 function addSite(e) {
   var allowListSelect = document.querySelector("#allowList");
   var newSiteTextField = document.querySelector("#newSite");
-  var domain = newSiteTextField.value; 
+  var domain = newSiteTextField.value;
 
   for(var option of allowListSelect.options) {
     if(option.value == domain) {
@@ -78,7 +78,7 @@ function addSite(e) {
 
 function removeSites(e) {
   var allowListSelect = document.querySelector("#allowList");
-  var selectedIndexes = [] 
+  var selectedIndexes = []
   for (var option of allowListSelect.selectedOptions) {
     selectedIndexes.push(option.index);
   }
@@ -88,20 +88,72 @@ function removeSites(e) {
     return b - a;
   });
   for(var index of selectedIndexes) {
-    allowListSelect.remove(index); 
+    allowListSelect.remove(index);
   }
   saveOptions();
 }
 
+var downloadIds = new Map();
+
+function downloadsChanged(delta) {
+  if(delta.state && (delta.state.current=="complete")) {
+    if(downloadIds.has(delta.id)) {
+      URL.revokeObjectURL(downloadIds.get(delta.id));
+      downloadIds.delete(delta.id);
+    }
+  }
+}
+
+async function backupSettings(e) {
+  var config = await getConfig();
+  var json = [JSON.stringify(config)];
+  var blob = new Blob(json, {type : 'application/json'});
+  var url = URL.createObjectURL(blob);
+  var downloadId = await browser.downloads.download({
+    url: url,
+    filename: "cookie-master-settings.json",
+    saveAs: true
+  });
+  downloadIds.set(downloadId, url);
+}
+
+async function restoreSettings(e) {
+  var fileSelector = document.querySelector("#restoreFile");
+  var configText = await fileSelector.files[0].text();
+  var config = JSON.parse(configText);
+
+  // Not sure I like manipulating the UI and then saving, but it works.
+  // Trouble is, I don't want tweo places constructing the config object, so
+  // saveOptions is 'better'.
+  // It might be better in the session cookies branch?
+  document.querySelector("#thirdParty").value = config.thirdParty;
+  document.querySelector("#ignoreSettingsWarning").checked = config.ignoreSettingsWarning;
+
+  //Remove existing, add from uploaded config.  I *really* don't like this, but...
+  var allowListSelect = document.querySelector("#allowList");
+  for(var i = allowListSelect.length; i >= 0 ; i--) {
+    allowListSelect.remove(i);
+  }
+
+  for(var domain of config.allowList) {
+    addDomainToDisplayList(domain);
+  }
+  saveOptions();
+  fileSelector.value = "";
+}
+
+
 function contentLoaded() {
-  displayOptions(); 
+  displayOptions();
   //Can't do this until the content is loaded, with the script in <head>.  I like it there too
   document.querySelector("#thirdParty").addEventListener("change", saveOptions);
   document.querySelector("#ignoreSettingsWarning").addEventListener("change", saveOptions);
   document.querySelector("#resetSettingsForm").addEventListener("submit", resetSettings);
+  document.querySelector("#backupSettings").addEventListener("click", backupSettings);
+  document.querySelector("#restoreSettings").addEventListener("click", restoreSettings);
 
   document.querySelector("#removeSites").addEventListener("click", removeSites);
-  document.querySelector("#addSite").addEventListener("click", addSite); 
+  document.querySelector("#addSite").addEventListener("click", addSite);
   document.getElementById('helplink').href = browser.extension.getURL("help.html");
 }
 
@@ -111,3 +163,5 @@ function resetSettings() {
   resetToFactorySettings();
 }
 document.addEventListener('DOMContentLoaded', contentLoaded);
+
+browser.downloads.onChanged.addListener(downloadsChanged);
