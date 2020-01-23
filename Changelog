@@ -45,3 +45,6 @@
     Badge-like behaviour on the popup button to show when first or third-party cookies are allowed/blocked (or if it's a mixed bag)
     Better handling of cookies set by javascript; much less guesswork now, more reliable
     Now shows first party cookies set in iframes, and toggle allow/block on same, from the status popup
+    Reimplemented cookie date parsing to eliminate a 3rd party library
+    Backup/restore of config now available
+    Link to settings is available from the browser popup, for easier access
