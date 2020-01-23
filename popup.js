@@ -72,6 +72,9 @@ function onCheckboxChange(e) {
 
 function clearDiv(divName) {
   var oldDiv = document.getElementById(divName);
+  if(!oldDiv) {
+    return;
+  }
   var div = document.createElement('div');
   div.id = divName;
   oldDiv.parentNode.replaceChild(div, oldDiv);
