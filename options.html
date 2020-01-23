@@ -11,7 +11,7 @@
 <body style="padding:10px">
   <h3>Third party cookie behaviour</h3>
   <form id="optionsForm">
-      <select id="thirdParty">
+      <select id="thirdParty" class="form-control input-sm">
         <option value="AllowNone">Block All</option>
         <option value="AllowIfOtherwiseAllowed">Allow only if explicitly permitted</option>
         <option value="AllowAll">Allow All (not recommended)</option>
@@ -20,27 +20,30 @@
   <hr>
   <h3>Sites allowed to set cookies</h3>
   <form id="allowListForm">
-    Website address:<br>
-    <input type="text" id="newSite" style="width:100%"></input><br>
-    <button type="button" id="addSite">Add Site</button><br>
-    <select id="allowList" size="10" multiple style="width:400px">
-    </select><br>
-    <button type="button" id="removeSites">Remove Selected</button><br>
+    <label for="newSite">Website address:</label>
+    <input type="text" id="newSite" class="form-control form-control-sm"></input>
+    <button type="button" id="addSite" class="btn btn-info btn-sm">Add Site</button><br>
+    <select id="allowList" size="10" multiple style="width:400px"></select><br>
+    <button type="button" id="removeSites" class="btn btn-info btn-sm ">Remove Selected</button><br>
   </form>
   <hr>
-  <h3> Other settings</h3>
+  <h3>Other settings</h3>
   <form>
-  <input type="checkbox" id="ignoreSettingsWarning"/> Ignore incompatible cookie settings warning
+    <div class="form-check">
+      <input type="checkbox" id="ignoreSettingsWarning" class="form-check-input"/><label for="ignoreSettingsWarning" class="form-check-label">Ignore incompatible cookie settings warning</label>
+    </div>
   </form>
   <hr>
-
-  <button id="backupSettings" type="submit">Backup Settings</button>
-  <hr>
-  <input id="restoreFile" type="file"/><button id="restoreSettings" type="submit">Restore Settings</button>
-  <hr>
-  <form id="resetSettingsForm">
-    <button type="submit">Reset to factory settings</button>
-  </form>
+  <h3>Settings Management</h3>
+  <div class="form-group">
+    <button id="backupSettings" type="submit"class="btn btn-info btn-sm">Backup Settings</button>
+    <input id="restoreFile" type="file"/  class="form-control-file"><button id="restoreSettings" type="submit"class="btn btn-info btn-sm">Restore Settings</button>
+  </div>
+  <div class="form-group">
+    <form id="resetSettingsForm">
+      <button type="submit" class="btn btn-info btn-sm">Reset to factory settings</button>
+    </form>
+  </div>
   <hr>
   <a id='helplink' href="will-be-replaced-at-load-time" target="_blank">Help</a>
 </body>
