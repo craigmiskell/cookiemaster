@@ -136,6 +136,10 @@ function filterSetCookie(header, requestURL, tabURL, tabId, frameId) {
       // Is that really a third party request?
       // How about https://blog.mozilla.org/addons/2020/01/22/extensions-in-firefox-72/
       // and the "thirdParty" property on the request?  Might be easier than guessing.
+      // However, it seems that that flag detects things like iframes to the same
+      // domain as third party (and any resources within them, to the saame domain)
+      // which is weird, and not (IMO) what a thirdParty request really is.
+      // SO let's not use it just yet
       switch(config.thirdParty) {
         case ThirdPartyOptions.AllowAll:
           for(var cookie of cookies) {
