@@ -70,7 +70,6 @@ window.addEventListener("scriptedCookieSet", async function(e) {
 });
 
 browser.runtime.onMessage.addListener(message => {
-  alert(window.location);
   switch (message.name) {
     case "configChanged":
       loadConfig();
