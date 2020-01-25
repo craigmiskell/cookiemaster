@@ -15,11 +15,11 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 function handleMessage(message, sender, sendResponse) {
   switch (message.name) {
     case "configChanged":
       loadConfig();
+      notifyAllTabsConfigChange();
       break;
     //Message passing to work around https://bugzilla.mozilla.org/show_bug.cgi?id=1329304
     // - can't getBackgroundPage() from an incognito window.  Given how (relatively) easy
@@ -27,8 +27,8 @@ function handleMessage(message, sender, sendResponse) {
     case "getTabsInfo":
       sendResponse(tabsInfo[message.tabId]);
       break;
-    case "scriptedCookieSet":
-      sendResponse(scriptedCookieSet(cookieparse(message.value), sender.tab.id, sender.frameId, sender.url));
+    case "scriptedCookieEvent":
+      scriptedCookieEvent(message.domain, message.configDomain, sender.tab.id, sender.frameId, message.allowed);
       break;
     }
 }
@@ -134,6 +134,8 @@ function filterSetCookie(header, requestURL, tabURL, tabId, frameId) {
       // Third party cookie
       // TODO: But what about if rURL is example.com when tURL is foo.example.com?
       // Is that really a third party request?
+      // How about https://blog.mozilla.org/addons/2020/01/22/extensions-in-firefox-72/
+      // and the "thirdParty" property on the request?  Might be easier than guessing.
       switch(config.thirdParty) {
         case ThirdPartyOptions.AllowAll:
           for(var cookie of cookies) {
@@ -147,7 +149,7 @@ function filterSetCookie(header, requestURL, tabURL, tabId, frameId) {
         case ThirdPartyOptions.AllowNone:
           for(var cookie of cookies) {
             var d = cookie['domain'] || rURL.hostname;
-            tabInfo.registerBlockedThirdPartyCookie(d, d, frameId);
+            tabInfo.registerBlockedThirdPartyCookie(d, frameId);
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
@@ -198,8 +200,8 @@ function filterSetCookie(header, requestURL, tabURL, tabId, frameId) {
       for(var cookie of cookies) {
         var d = cookie['domain'] || rURL.hostname;
         isThirdParty ?
-          tabInfo.registerBlockedThirdPartyCookie(d, d, frameId) :
-          tabInfo.registerBlockedFirstPartyCookie(d, d, frameId)
+          tabInfo.registerBlockedThirdPartyCookie(d, frameId) :
+          tabInfo.registerBlockedFirstPartyCookie(d, frameId)
       }
       //console.log("Blocking "+(isThirdParty?"third":"first")+" party cookie for "+domain)
     }
@@ -260,39 +262,15 @@ function cookieIsBeingDeleted(cookie, date = new Date()) {
   }
   return false;
 }
-
-// Captured by a content-script hooking document.cookies (see content.js).
-// Note that per https://developer.mozilla.org/en-US/docs/Web/API/Document/cookie:
-// "The domain must match the domain of the JavaScript origin. Setting cookies to foreign domains will be silently ignored"
-// So this can only be a first-party cookie; we're going to assume that this
-// holds and record it as such;
-function scriptedCookieSet(cookie, tabId, frameId, url) {
-  // console.log("scriptedCookieSet:");
-  // console.log(cookie);
-  if (cookieIsBeingDeleted(cookie)) {
-    return true;
-  }
+function scriptedCookieEvent(domain, configDomain, tabId, frameId, allowed) {
   var tabInfo = getTabInfo(tabId);
-
-  var domain = new URL(url).hostname;
-  var configDomain = domainIsAllowed(config, domain);
-  //Record this activity against the configuration domain which allowed the
-  // cookie, otherwise use the domain of the cookie itself when blocking.
-  var recordDomain = configDomain || domain;
-
-  var action;
-  if(configDomain == undefined) {
-    // console.log("Blocking script set cookie for "+domain);
-    action = 'blocked';
-    tabInfo.registerBlockedFirstPartyCookie(domain, domain, frameId)
+  if(allowed) {
+    tabInfo.registerAllowedFirstPartyCookie(domain, configDomain, frameId);
   } else {
-    // console.log("Allowing script set cookie for "+domain);
-    action = 'allowed';
-    tabInfo.registerAllowedFirstPartyCookie(domain, configDomain, frameId)
+    tabInfo.registerBlockedFirstPartyCookie(domain, frameId);
   }
   tabInfo.markUpdated();
   updateBrowserActionIcon(tabId);
-  return action == "allowed";
 }
 
 var config;
@@ -309,10 +287,10 @@ function beforeNavigate(details) {
   //console.log("Before navigate ("+details.frameId+"): " + details.url);
   if(details.frameId == 0) {
     //console.log("beforeNavigate with frameId 0; clearing tabInfo");
-    // 0 == the main frame, i.e. new URL for the tab, not just a sub-frame, so it's time to
-    // clean out information (equiv to the tab being closed/removed, as it happens)
+    // 0 == the main frame, i.e. new URL for the tab, not just a sub-frame, so
+    // it's time to clean out the stored info for that tab)
     var tabId = details.tabId;
-    tabRemoved(tabId);
+    clearTabInfo(tabId);
   }
 }
 
@@ -325,9 +303,34 @@ function getTabInfo(tabId) {
 
 //Tidyup; delete metadata about tabs that have been closed
 function tabRemoved(tabId) {
+  clearTabInfo(tabId);
+}
+
+function clearTabInfo(tabId) {
   if(tabsInfo[tabId]) {
     //console.log(tabsInfo[tabId]);
     delete tabsInfo[tabId];
+  }
+}
+
+async function notifyAllTabsConfigChange() {
+  // NB: even with windowTypes, some tabs will still not be entirely 'normal'
+  // e.g. about:* and so on, but we try to eliminate the really abnormal ones
+  // Pages without the content-script (blacklisted ones) will generate an error
+  // in the console: "Error: Could not establish connection. Receiving end does not exist."
+  // This is not an exception so cannot be caught.  The only alternative
+  // is to have the content script *register* each tab when it loads.  But
+  // that's a bit naff, to eliminate some harmless errors in the console.
+  var windows = await browser.windows.getAll({
+    "populate": true,
+    "windowTypes": ["normal"]
+  });
+  for(var window of windows) {
+    for(var tab of window.tabs) {
+      browser.tabs.sendMessage(tab.id, {
+        "name": "configChanged"
+      });
+    }
   }
 }
 

@@ -101,11 +101,14 @@ class TabInfo {
   registerAllowedThirdPartyCookie(cookieDomain, configDomain, frameId) {
     this._registerCookie(this._allowedThirdPartyDomains, cookieDomain, configDomain, frameId);
   }
-  registerBlockedFirstPartyCookie(cookieDomain, configDomain, frameId) {
-    this._registerCookie(this._blockedFirstPartyDomains, cookieDomain, configDomain, frameId);
+
+  // When blocked, the domain which caused the blocking is the cookie domain
+  // (there was no domain listed in configuration that caused it to be blocked)
+  registerBlockedFirstPartyCookie(cookieDomain, frameId) {
+    this._registerCookie(this._blockedFirstPartyDomains, cookieDomain, cookieDomain, frameId);
   }
-  registerBlockedThirdPartyCookie(cookieDomain, configDomain, frameId) {
-    this._registerCookie(this._blockedThirdPartyDomains, cookieDomain, configDomain, frameId);
+  registerBlockedThirdPartyCookie(cookieDomain, frameId) {
+    this._registerCookie(this._blockedThirdPartyDomains, cookieDomain, cookieDomain, frameId);
   }
 
   markUpdated() {

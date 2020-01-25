@@ -43,7 +43,7 @@
         "https://*/*"
       ],
       "all_frames": true,
-      "js": ["content.js"],
+      "js": ["cookie-date.js", "cookie-parse.js", "config.js", "content.js"],
       "run_at": "document_start"
     }
   ],
