@@ -1,0 +1,24 @@
+table.logs {
+  width: 100%;
+}
+table.logs th {
+  border-bottom: 1pt solid black;
+}
+table.logs th.timestamp {
+  white-space: nowrap;
+}
+table.logs th.level{
+  white-space:nowrap
+  padding: 5px;
+}
+table.logs th.log{
+}
+table.logs td {
+   padding: 5px;
+}
+table.logs td.timestamp{
+  white-space: nowrap;
+}
+
+table.logs tr:nth-child(even) {background: #CCC}
+table.logs tr:nth-child(odd) {background: #FFF}

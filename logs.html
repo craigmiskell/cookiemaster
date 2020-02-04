@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Cookie Master Logs</title>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" href="logs.css">
+  <script src="messages.js"></script>
+  <script src="logger.js"></script>
+  <script src="config.js"></script>
+  <script src="logs.js"></script>
+</head>
+<body>
+  <form id="logLevelForm">
+      <label for="logLevel">Logging Level</label>
+      <select id="logLevel"></select>
+  </form>
+  <button id="pause" type="button">Pause</button>
+  <button id="clear" type="button">Clear</button>
+
+  <table id="logs" class="logs">
+    <thead>
+    <tr><th class="timestamp">Timestamp</th><th class="level">Level</th><th class="log">Log</th></tr>
+    </thead>
+    <tbody id="logsBody"></tbody>
+  </table>
+</body>
+
+</html>

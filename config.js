@@ -1,7 +1,7 @@
 /*
   Copyright 2017 Craig Miskell
 
-  This file is part of CookieMaster, a Firefox Web Extension 
+  This file is part of CookieMaster, a Firefox Web Extension
   CookieMaster is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
@@ -13,7 +13,7 @@
   GNU General Public License for more details.
 
   You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>. 
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 var ThirdPartyOptions = {
@@ -23,13 +23,18 @@ var ThirdPartyOptions = {
 }
 
 var CookieActions = {
-  Blocked: 0, 
+  Blocked: 0,
   Allowed: 1,
   Unset: 2, //Neither blocked nor allowed
 }
 
 async function getConfig() {
-  var config = await browser.storage.local.get();
+  try {
+    var config = await browser.storage.local.get();
+  } catch(e) {
+    console.error("caught exception");
+    console.error(e);
+  }
   if(!('ready' in config)) {
     resetToFactorySettings();
     return browser.storage.local.get();
@@ -47,14 +52,14 @@ async function resetToFactorySettings() {
 
 //Returns the configured domain that allowed the named domain, or undefined if none do.
 function domainIsAllowed(config, domain) {
-  //Is a linear search ok?  Can't help but wonder if there's a more efficient technique.  Maybe a 
+  //Is a linear search ok?  Can't help but wonder if there's a more efficient technique.  Maybe a
   // transient cache of results would help?
 
   var candidates = [];
   //NB: Assumes the 'allow' list has leading dots on all entries, to properly terminate domain
   // components
   for (var candidate of config.allowList) {
-    //Domain *must* start with a dot to match the allow list constraint 
+    //Domain *must* start with a dot to match the allow list constraint
     if(!domain.startsWith('.')) {
       domain = '.'+domain;
     }
@@ -70,7 +75,7 @@ function domainIsAllowed(config, domain) {
       }
     }
     return result;
-    
+
   }
   return undefined;
 }

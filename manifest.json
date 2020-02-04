@@ -43,12 +43,12 @@
         "https://*/*"
       ],
       "all_frames": true,
-      "js": ["cookie-date.js", "cookie-parse.js", "config.js", "content.js"],
+      "js": ["messages.js", "logger.js", "cookie-date.js", "cookie-parse.js", "config.js", "content.js"],
       "run_at": "document_start"
     }
   ],
   "background": {
-    "scripts": ["cookie-date.js", "cookie-parse.js", "data-objects.js", "config.js", "background.js"]
+    "scripts": ["messages.js", "logger.js", "cookie-date.js", "cookie-parse.js", "data-objects.js", "config.js", "background.js"]
   },
   "options_ui": {
     "page": "options.html",

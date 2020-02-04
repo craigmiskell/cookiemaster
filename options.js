@@ -28,7 +28,7 @@ function saveOptions() {
     allowList: allowList,
     ignoreSettingsWarning: ignoreSettingsWarning
   });
-  browser.runtime.sendMessage({"name": "configChanged"});
+  browser.runtime.sendMessage({"type": MessageTypes.ConfigChanged});
 }
 
 function addDomainToDisplayList(domain) {
@@ -143,6 +143,7 @@ async function restoreSettings(e) {
 }
 
 
+// TODO: check the session-cookies branch logging commit to see why we changed to async here (is it necessary?)
 function contentLoaded() {
   displayOptions();
   //Can't do this until the content is loaded, with the script in <head>.  I like it there too
@@ -154,14 +155,25 @@ function contentLoaded() {
 
   document.querySelector("#removeSites").addEventListener("click", removeSites);
   document.querySelector("#addSite").addEventListener("click", addSite);
-  document.getElementById('helplink').href = browser.extension.getURL("help.html");
+  document.getElementById('openLogs').href = browser.runtime.getURL("logs.html");
+  document.getElementById('helplink').href = browser.runtime.getURL("help.html");
 }
 
 function resetSettings() {
-  console.log("Clearing all settings");
+  logger.warn("Clearing all settings");
   browser.storage.local.clear();
   resetToFactorySettings();
 }
+
+function handleMessage(message, sender, sendMessage) {
+  switch(message.type) {
+    case MessageTypes.MessageLogged:
+      displayLogs();
+      break;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', contentLoaded);
 
 browser.downloads.onChanged.addListener(downloadsChanged);
+browser.runtime.onMessage.addListener(handleMessage);

@@ -126,7 +126,6 @@ class CookieDateParser {
       var charCode = dateString.charCodeAt(index);
       var char = dateString.charAt(index);
       index++;
-      // console.log("Checking char " +char + ":"+charCode);
 
       var isDelim = this.dateDelimiterCodes.has(charCode);
       if(!isDelim) {
@@ -138,7 +137,6 @@ class CookieDateParser {
           // date token has finished; process it
           var dateToken = dateTokenChars.join("");
           dateTokenChars = []; // Clear it out for next loop
-          // console.log("Processing dateToken "+dateToken);
           if(!found_time) {
             [found_time, hour, minute,second] = this.parseCookieTime(dateToken);
             if(found_time) {

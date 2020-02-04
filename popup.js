@@ -17,6 +17,7 @@
 */
 
 var emptyMap = new Map();
+var logger = contextSafeLogger();
 
 async function saveConfig(config) {
   await browser.storage.local.set({
@@ -24,7 +25,7 @@ async function saveConfig(config) {
     allowList: config.allowList,
     ignoreSettingsWarning: ('ignoreSettingsWarning' in config) ? config.ignoreSettingsWarning : false
   });
-  await browser.runtime.sendMessage({"name": "configChanged"})
+  await browser.runtime.sendMessage({"type": MessageTypes.ConfigChanged})
 }
 
 async function addException(domain) {
@@ -209,26 +210,26 @@ function collectFrameCookies(store) {
   var result = new Map()
   for (frameInfo of store) {
     if(frameInfo[0] == 0) {
-      //Primary frame dealt with separately)
+      //Primary frame dealt with separately
       continue
     }
-    // console.log("Frameid:"+frameInfo[0]);
+    logger.debug("Frameid:"+frameInfo[0]);
     for(cookieInfo of frameInfo[1]) {
       var configDomain = cookieInfo[0];
       var cookieDomains = cookieInfo[1]; // A Set
-      // console.log("This frame has a configDomain of "+configDomain);
+      logger.debug("This frame has a configDomain of "+configDomain);
       var mergedCookieInfo = result.get(configDomain);
       if(!mergedCookieInfo) {
-        // console.log("No existing set for this configDomain; creating one");
+        logger.debug("No existing set for this configDomain; creating one");
         mergedCookieInfo = new Set();
         result.set(configDomain, mergedCookieInfo);
       }
       for (c of cookieDomains) {
         if(mergedCookieInfo.has(c)) {
-          // console.log(c+" is already in the set");
+          logger.debug( c+" is already in the set");
         } else {
-        // console.log("Adding "+c+" to the configDomain "+configDomain);
-        mergedCookieInfo.add(c);
+          logger.debug( "Adding "+c+" to the configDomain "+configDomain);
+          mergedCookieInfo.add(c);
         }
       }
     }
@@ -249,12 +250,13 @@ async function render(force = false) {
   var tab = tabs[0];
 
   if(!tab.url.startsWith('http')) {
-    document.body.innerHTML = "<em>Not an HTTP(S) page</em>";
+    //document.body.innerHTML = "<em>Not an HTTP(S) page</em>";
+    document.getElementById("main").innerHTML = "<em>Not an HTTP(S) page</em>";
     return;
   }
 
   var tabInfoObj = await browser.runtime.sendMessage({
-    "name": "getTabsInfo",
+    "type": MessageTypes.GetTabsInfo,
     "tabId": tab.id
   });
   var tabInfo = TabInfo.fromObject(tabInfoObj);
@@ -455,8 +457,16 @@ async function checkCookieConfig() {
 function openHelp(e) {
   browser.tabs.create({
     active: true,
-    url: browser.extension.getURL("help.html")
+    url: browser.runtime.getURL("help.html")
   });
+  e.preventDefault();
+}
+
+function openLogs(e) {
+  browser.windows.create({
+    url: browser.runtime.getURL("logs.html")
+  });
+  e.preventDefault();
 }
 
 function openSettings(e) {
@@ -464,9 +474,11 @@ function openSettings(e) {
     active: true,
     url: browser.extension.getURL("options.html")
   });
+  e.preventDefault();
 }
 
 async function contentLoaded() {
+  document.getElementById('logslink').addEventListener('click', openLogs);
   document.getElementById('helplink').addEventListener('click', openHelp);
   document.getElementById('settingslink').addEventListener('click', openSettings);
   checkCookieConfig();
