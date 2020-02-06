@@ -36,12 +36,21 @@ work.  Yay for async.... :(
 */
 var logger = contextSafeLogger();
 
+// TODO: Instead of loading the config at first run (see startup()),
+// see if we can use the contentScripts.register API from background.js
+// to register (and de-register as necessary) the content scripts for the page
+// with a 'code' type script that assigns the current config (that background
+// already has available without an async call) to the 'config' var.
+// For best results we'll probably have to:
+// 1) Fully define the entire contentscript in that registration, rather than
+//    in manifest.json, so we can get the ordering right (config needs to be 1st)
+// 2) Perhaps still do an async getConfig() in startup() if config is null, just
+//    in case.  But we want startup() to be sync if possible, so rearrange such
+//    that *if* config is null, do an async load and then call a new function
+//    which does the eval/injection, but if config is defined, just immediately
+//    (sync) call the eval/injection function.  Gives a good result where we
+//    everything works, and a tolerable one when it doesn't.
 var config;
-function loadConfig() {
-  getConfig().then(function(result) {
-    config = result;
-  });
-}
 
 window.addEventListener("scriptedCookieSet", async function(e) {
   var response = allowScriptedCookieSet(cookieparse(e.detail), window.location)
@@ -73,15 +82,13 @@ window.addEventListener("scriptedCookieSet", async function(e) {
   });
 });
 
-browser.runtime.onMessage.addListener(message => {
-  switch (message.name) {
-    case "configChanged":
-      loadConfig();
+async function handleMessage(message, sender, sendResponse) {
+  switch (message.type) {
+    case MessageTypes.ConfigChanged:
+      config = await getConfig();
       break;
     }
-});
-
-loadConfig();
+}
 
 var cookieDateParser = new CookieDateParser();
 // Inspects the expires and max-age attribute values of the cookie
@@ -103,42 +110,57 @@ function cookieIsBeingDeleted(cookie, date = new Date()) {
 }
 
 function allowScriptedCookieSet(cookie, url) {
-  if (cookieIsBeingDeleted(cookie)) {
-    return undefined;
-  }
-  var domain = new URL(url).hostname;
-  var configDomain = domainIsAllowed(config, domain);
-  //Record this activity against the configuration domain which allowed the
-  // cookie, otherwise use the domain of the cookie itself when blocking.
-  var recordDomain = configDomain || domain;
-  return {
-    "allowed": (configDomain != undefined),
-    "domain": domain,
-    "configDomain": configDomain
+  try {
+    if (cookieIsBeingDeleted(cookie)) {
+      return undefined;
+    }
+    var domain = new URL(url).hostname;
+    var configDomain = domainIsAllowed(config, domain);
+    //Record this activity against the configuration domain which allowed the
+    // cookie, otherwise use the domain of the cookie itself when blocking.
+    var recordDomain = configDomain || domain;
+    return {
+      "allowed": (configDomain != undefined),
+      "domain": domain,
+      "configDomain": configDomain
+      }
+  } catch(e) {
+    console.log(e);
+    logger.error(e)
   }
 }
+async function startup() {
+  // Cannot capture cookies until we have config, and that is async
+  // So we have to do this in an await function, and only inject
+  // our capturing code *after* we have config.
+  // Downside: we may miss early cookies, so we're going to have to still
+  // try and capture those with events. Boooooo. Hisssss. Booooo
+  config = await getConfig();
+  // Many thanks to @gregers on https://stackoverflow.com/questions/32410331/proxying-of-document-cookie
+  // for inspiration.
+  window.eval(`
+    var cookiePropertyDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
+    Object.defineProperty(Document.prototype, "cookie", {
+      get: cookiePropertyDescriptor.get,
+      set: function(value) {
+        console.log("cookie being set");
+        var event = new CustomEvent("scriptedCookieSet",
+          {
+            detail: value
+          }
+        );
+        // It is absolutely critical that this call to dispatchEvent is, as the
+        // documentation claims, synchronous (not async).  It *must* execute
+        // the event handling code, in the content-script context, and set the
+        // cookie (if allowed) before this 'set' implementation finishes and
+        // returns, otherwise it does not accurately emulate the interface.  Code
+        // that then goes to immediately retrieve the cookie (e.g. testing
+        // if cookies are settable) will fail if this requirement is not met.
+        window.dispatchEvent(event);
+      }
+    });
+  `);
+}
+browser.runtime.onMessage.addListener(handleMessage);
 
-
-// Many thanks to @gregers on https://stackoverflow.com/questions/32410331/proxying-of-document-cookie
-// for inspiration.
-window.eval(`
-  var cookiePropertyDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
-  Object.defineProperty(Document.prototype, "cookie", {
-    get: cookiePropertyDescriptor.get,
-    set: function(value) {
-      var event = new CustomEvent("scriptedCookieSet",
-        {
-          detail: value
-        }
-      );
-      // It is absolutely critical that this call to dispatchEvent is, as the
-      // documentation claims, synchronous (not async).  It *must* execute
-      // the event handling code, in the content-script context, and set the
-      // cookie (if allowed) before this 'set' implementation finishes and
-      // returns, otherwise it does not accurately emulate the interface.  Code
-      // that then goes to immediately retrieve the cookie (e.g. testing
-      // if cookies are settable) will fail if this requirement is not met.
-      window.dispatchEvent(event);
-    }
-  });
-`);
+startup();
