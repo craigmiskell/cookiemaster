@@ -120,7 +120,7 @@ function tabUpdated(tabId, changeInfo, tabs) {
 }
 
 function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
-  logger.debug("processHeader " + header.name, requestId);
+  logger.trace("processHeader " + header.name, requestId);
   if(header.name.toLowerCase() == 'set-cookie') {
     logger.debug("set-cookie for " + requestURL + " on tab with url " + tabURL, requestId);
 
@@ -240,7 +240,7 @@ async function headersReceived(details) {
     // THis is true debug-level only, for rare and occasional use.
     // console.log("headersReceived");
     // console.log(details);
-    logger.debug("Headers received", details.requestId);
+    logger.trace("Headers received", details.requestId);
     var tabId = details.tabId;
     var tabInfo = getTabInfo(tabId);
 
