@@ -120,7 +120,7 @@ function tabUpdated(tabId, changeInfo, tabs) {
 }
 
 function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
-  logger.trace("processHeader " + header.name, requestId);
+  logger.trace("processHeader " + header.name + " for "+requestURL +" on "+ tabURL, requestId);
   if(header.name.toLowerCase() == 'set-cookie') {
     logger.debug("set-cookie for " + requestURL + " on tab with url " + tabURL, requestId);
 
@@ -240,7 +240,6 @@ async function headersReceived(details) {
     // THis is true debug-level only, for rare and occasional use.
     // console.log("headersReceived");
     // console.log(details);
-    logger.trace("Headers received", details.requestId);
     var tabId = details.tabId;
     var tabInfo = getTabInfo(tabId);
 
@@ -251,6 +250,7 @@ async function headersReceived(details) {
       // parent frame's url and the thing we want is the actual url of the request.
       tabURL = details.url;
     }
+    logger.trace("Headers received for "+details.url+" on "+tabURL , details.requestId);
 
     var filteredResponseHeaders = details.responseHeaders.filter(function(header) {
       return processHeader(header, details.url, tabURL, tabId, details.frameId, details.requestId);
@@ -305,7 +305,7 @@ var config;
 var tabsInfo= {};
 
 async function loadConfig() {
-  logger.info("Loadconfig");
+  logger.info("Background script - load config");
   config = await getConfig();
 }
 
@@ -314,7 +314,7 @@ function beforeNavigate(details) {
   try {
     logger.debug("Before navigate ("+details.frameId+"): " + details.url, correlationId);
     if(details.frameId == 0) {
-      logger.debug("beforeNavigate with frameId 0; clearing tabInfo");
+      logger.debug("beforeNavigate with frameId 0; clearing tabInfo", correlationId);
       // 0 == the main frame, i.e. new URL for the tab, not just a sub-frame, so
       // it's time to clean out the stored info for that tab)
       var tabId = details.tabId;
