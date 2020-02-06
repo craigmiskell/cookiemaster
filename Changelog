@@ -40,7 +40,7 @@
   Changes:
     Fix private browsing removal of javascript-set cookies
 
-2020-01-XX - version 1.1.0 release
+2020-01-23 - version 1.1.0 release
   Changes:
     Badge-like behaviour on the popup button to show when first or third-party cookies are allowed/blocked (or if it's a mixed bag)
     Better handling of cookies set by javascript; much less guesswork now, more reliable
@@ -48,3 +48,11 @@
     Reimplemented cookie date parsing to eliminate a 3rd party library
     Backup/restore of config now available
     Link to settings is available from the browser popup, for easier access
+
+2020-01-25 - version 1.1.1 release
+  Changes:
+    Move cookie authorisation into the content script to fix https://github.com/craigmiskell/cookiemaster/issues/11
+
+2020-01-25 - version 1.1.2 release
+  Changes:
+    Remove stupid debug logging (alert) left behind in 1.1.1
