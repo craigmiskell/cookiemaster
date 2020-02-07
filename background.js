@@ -165,7 +165,7 @@ function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
-          logger.info("Allowing third party cookie for domain "+ cookies[0]['domain']+"in header of request on "+tURL.hostname, requestId);
+          logger.info("Allowing third party cookie for domain "+ cookies[0]['domain']+" in header of request on "+tURL.hostname, requestId);
           return true;
         case ThirdPartyOptions.AllowNone:
           for(var cookie of cookies) {
@@ -174,7 +174,7 @@ function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
-          logger.info("Blocking third party cookie for domain "+ cookies[0]['domain']+"in header of request on "+tURL.hostname, requestId);
+          logger.info("Blocking third party cookie for domain "+ cookies[0]['domain']+" in header of request on "+tURL.hostname, requestId);
           return false;
         case ThirdPartyOptions.AllowIfOtherwiseAllowed:
           // continue on with normal filtering
