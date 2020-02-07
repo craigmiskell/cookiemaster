@@ -17,6 +17,7 @@
 */
 
 var emptyMap = new Map();
+
 var logger = contextSafeLogger();
 
 async function saveConfig(config) {
@@ -244,7 +245,6 @@ async function render(force = false) {
   rendering = true;
   thirdPartySectionGenerated = false;
   var config = await getConfig();
-
 
   var tabs = await browser.tabs.query({active: true, currentWindow: true});
   var tab = tabs[0];
@@ -502,6 +502,5 @@ function toggleThirdParty(e) {
   img.src="../icons/arrow-"+newDir+".png";
 
 }
-
 
 document.addEventListener('DOMContentLoaded', contentLoaded);
