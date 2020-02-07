@@ -299,6 +299,33 @@ function scriptedCookieEvent(domain, configDomain, tabId, frameId, allowed) {
   }
 }
 
+// Catch script-set cookies (that weren't in headers, and weren't caught by
+// our content-script capturing (e.g. if CSP prevented it)
+// This is a last-ditch effort, and can only allow/block; it used to *attempt*
+// to show the activity against the tab, but frankly that was awful and guessy
+// and not reliable and I cannot in good conscience keep doing that.
+// See https://bugzilla.mozilla.org/show_bug.cgi?id=1416548
+async function cookieChanged(changeInfo) {
+  var cookie = changeInfo.cookie;
+  if(!changeInfo.removed) {
+    var domain = cookie.domain;
+    if(domainIsAllowed(config, domain) == undefined) {
+      logger.info("Blocking cookie-change cookie for "+domain + " in catch-all event");
+      var prefix = cookie.secure ? "https://" : "http://";
+      var url = prefix + domain + cookie.path;
+      browser.cookies.remove({
+        url: url,
+        name: cookie.name,
+        storeId: cookie.storeId,
+        firstPartyDomain: cookie.firstPartyDomain
+      });
+    } else {
+      logger.info("Allowing cookie-change cookie for "+domain + " in catch-all event");
+    }
+   }
+ }
+
+
 var config;
 //A record of tab information, from webNavigation (for early loading details)
 // and for keeping track of cookies loaded/blocked per tab (for the UI)
@@ -381,6 +408,8 @@ browser.webRequest.onHeadersReceived.addListener(
   },
   ["blocking", "responseHeaders"]
 );
+
+browser.cookies.onChanged.addListener(cookieChanged);
 browser.webNavigation.onBeforeNavigate.addListener(beforeNavigate);
 browser.tabs.onRemoved.addListener(tabRemoved);
 browser.tabs.onUpdated.addListener(tabUpdated, { properties: ["status"]});
