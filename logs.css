@@ -8,7 +8,7 @@ table.logs th.timestamp {
   white-space: nowrap;
 }
 table.logs th.level{
-  white-space:nowrap
+  white-space:nowrap;
   padding: 5px;
 }
 table.logs th.log{
