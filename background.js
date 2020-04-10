@@ -397,10 +397,11 @@ async function notifyAllTabsConfigChange() {
 
 function onInstalled(details) {
   if(details.temporary) {
-      // On a temporary install (web-ext/debugging), auto-open the logs
-      browser.windows.create({
+    // On a temporary install (web-ext/debugging), auto-open the logs
+    browser.windows.create({
       url: browser.runtime.getURL("logs.html")
     });
+    logger.level = LogLevel.TRACE;
   }
 }
 
