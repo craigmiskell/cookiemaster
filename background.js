@@ -395,6 +395,15 @@ async function notifyAllTabsConfigChange() {
   }
 }
 
+function onInstalled(details) {
+  if(details.temporary) {
+      // On a temporary install (web-ext/debugging), auto-open the logs
+      browser.windows.create({
+      url: browser.runtime.getURL("logs.html")
+    });
+  }
+}
+
 logger.info("Loading CookieMaster extension @ " + Date());
 loadConfig();
 
@@ -414,3 +423,5 @@ browser.webNavigation.onBeforeNavigate.addListener(beforeNavigate);
 browser.tabs.onRemoved.addListener(tabRemoved);
 browser.tabs.onUpdated.addListener(tabUpdated, { properties: ["status"]});
 browser.runtime.onMessage.addListener(handleMessage);
+
+browser.runtime.onInstalled.addListener(onInstalled);
