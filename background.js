@@ -79,6 +79,10 @@ function _calculateState(allowed, blocked) {
 }
 
 function updateBrowserActionIcon(tabId) {
+  if(tabId == -1) {
+    // Occasionally get a malformed tabId (maybe only in debugging mode).
+    return;
+  }
    var tabInfo = getTabInfo(tabId);
    logger.debug("Update browser action icon:"+tabInfo.allowedFirstPartyDomains.size+":"+tabInfo.blockedFirstPartyDomains.size+":"
                +tabInfo.allowedThirdPartyDomains.size+":"+tabInfo.blockedThirdPartyDomains.size);
@@ -258,6 +262,7 @@ function addHashIfNecessary(directive) {
   // directive then the browser will ignore unsafe-inline, in which case
   // we *must* add our hash.
   if(!hasUnsafeInline || hasNonceOrHash) {
+    logger.debug("Got local hash:"+localWindowContextContentScriptSHA256);
     return directive + " 'sha256-" + localWindowContextContentScriptSHA256+"'"
   }
   logger.debug("Did not have unsafe-inline ("+hasUnsafeInline+"), or did and had no hash/nonce: "+hasNonceOrHash);
@@ -271,7 +276,7 @@ function addHashIfNecessary(directive) {
 // I thought we might.  So now that it can... eh, why remove it?)
 function processHeader(header) {
   if(header.name.toLowerCase() == 'content-security-policy') {
-    logger.trace("Found content-security-policy:"+header.value);
+    logger.debug("Found content-security-policy:"+header.value);
     var directives = header.value.split(";")
     var scriptSrcElemDirectiveIndex = -1;
     var defaultSrcDirectiveIndex = -1;
