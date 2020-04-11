@@ -119,8 +119,10 @@ function tabUpdated(tabId, changeInfo, tabs) {
   }
 }
 
-function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
-  logger.trace("processHeader " + header.name + " for "+requestURL +" on "+ tabURL, requestId);
+// Checks the header, in the context of all the other parameters, and returns
+// true to retain the header, or false to filter it out.
+function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
+  logger.trace("shouldFilterHeader " + header.name + " for "+requestURL +" on "+ tabURL, requestId);
   if(header.name.toLowerCase() == 'set-cookie') {
     logger.debug("set-cookie for " + requestURL + " on tab with url " + tabURL, requestId);
 
@@ -234,10 +236,95 @@ function processHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
   return true;
 }
 
+// A dirty hack to avoid *unnecessarily* making processHeader an async function
+// and thus having to Promise.all() the results in headersReceived, when all
+// we care about is getting this value *once*, when the only reason that
+// needs to be async is because the crypto hashing call is f%@king async.
+// Set with an await call in headersReceived then used
+// by processHeader.  This is slightly ugly and impure in pursuit of not having
+// IMO even worse async-ugly.  I don't care; Fight me.
+var localWindowContextContentScriptSHA256;
+
+var asciiWhitespaceRegexp = RegExp('[\t\n\f\r ]+');
+var shaSourceRegexp = RegExp("'sha(256|384|512)-");
+
+function addHashIfNecessary(directive) {
+  var hasUnsafeInline = directive.includes("unsafe-inline");
+  var hasNonceOrHash = directive.includes("'nonce-") || shaSourceRegexp.test(directive);
+  // We should not add our hash if there's unsafe-inline
+  // Doing so would cause unsafe-inline to be ignored, and that would break
+  // whatever the website owner was trying to allow (however dangerously)
+  // However, if there is unsafe-inline *and* some other nonce or hash
+  // directive then the browser will ignore unsafe-inline, in which case
+  // we *must* add our hash.
+  if(!hasUnsafeInline || hasNonceOrHash) {
+    return directive + " 'sha256-" + localWindowContextContentScriptSHA256+"'"
+  }
+  logger.debug("Did not have unsafe-inline ("+hasUnsafeInline+"), or did and had no hash/nonce: "+hasNonceOrHash);
+  return undefined;
+}
+
+// Inspect and modify the header if it needs to be modified (for any reason,
+// e.g. CSP).  Returns either the original header, a header to *replace*
+// the original header, or null to remove the header entirely (nb: we don't
+// actually return null in any cases yet, but I wrote that initially because
+// I thought we might.  So now that it can... eh, why remove it?)
+function processHeader(header) {
+  if(header.name.toLowerCase() == 'content-security-policy') {
+    logger.trace("Found content-security-policy:"+header.value);
+    var directives = header.value.split(";")
+    var scriptSrcElemDirectiveIndex = -1;
+    var defaultSrcDirectiveIndex = -1;
+    var modified = false
+    for (var i=0; i < directives.length; i++) {
+      var directive = directives[i].trim();
+      // Definition of whitespace: https://infra.spec.whatwg.org/#ascii-whitespace
+      var bits = directive.split(asciiWhitespaceRegexp);
+      var directiveName = bits[0];
+      if(directiveName.toLowerCase() == "script-src" || directiveName.toLowerCase() == "script-src-elem") {
+        var result = addHashIfNecessary(directives[i]);
+        if(result) {
+          directives[i] = result;
+          modified = true;
+        }
+      } else if (directiveName.toLowerCase() == "default-src") {
+        // This is just a marker for later (we may not yet know if this is
+        // relevant)
+        defaultSrcDirectiveIndex = i;
+      }
+    }
+    if(!modified && (defaultSrcDirectiveIndex != -1)) {
+      //There were no script-specific directives, but there is a default-src
+      // so we need to add our hash to default-src.
+      logger.debug("There is a default-src but no script-src");
+      var result = addHashIfNecessary(directives[defaultSrcDirectiveIndex]);
+      if(result) {
+        logger.debug("Adding hash to default-src");
+        directives[defaultSrcDirectiveIndex] = result;
+        modified = true;
+      } else {
+        logger.debug("Not adding hash to default-src because of other directives");
+      }
+    }
+
+    if(modified) {
+      header.value = directives.join(";");
+    } else {
+      logger.debug("Did not modify CSP");
+    }
+  }
+  return header;
+}
+
+// Helper for .filter on an array, to emulate Ruby compact (remove nulls)
+function _compact(item) {
+  return item != null;
+}
+
 async function headersReceived(details) {
   try {
     // Do not log these using the logger; they're too risky security wise.
-    // THis is true debug-level only, for rare and occasional use.
+    // This is true debug-level only, for rare and occasional use.
     // console.log("headersReceived");
     // console.log(details);
     var tabId = details.tabId;
@@ -253,10 +340,17 @@ async function headersReceived(details) {
     logger.trace("Headers received for "+details.url+" on "+tabURL , details.requestId);
 
     var filteredResponseHeaders = details.responseHeaders.filter(function(header) {
-      return processHeader(header, details.url, tabURL, tabId, details.frameId, details.requestId);
+      return shouldFilterHeader(header, details.url, tabURL, tabId, details.frameId, details.requestId);
     });
 
-    return {responseHeaders: filteredResponseHeaders};
+    // See comment on the variable definition; yes, this is bad.  But the
+    // alternative is worse IMO.
+    localWindowContextContentScriptSHA256 = await getWindowContextContentScriptSHA256()
+    var processedHeaders = filteredResponseHeaders
+      .map(processHeader)
+      .filter(_compact);
+
+    return {responseHeaders: processedHeaders};
   } catch(e) {
     logger.error(e, details.requestId);
     //Return the original; it's not ideal, but it'll do if things have gone horribly wrong
@@ -401,7 +495,7 @@ function onInstalled(details) {
     browser.windows.create({
       url: browser.runtime.getURL("logs.html")
     });
-    logger.level = LogLevel.TRACE;
+    logger.level = LogLevel.DEBUG;
   }
 }
 

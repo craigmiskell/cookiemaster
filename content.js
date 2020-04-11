@@ -21,14 +21,24 @@ A content script injected into *every* page, that hooks document.cookie
 so that we can detect a cookie being set by javascript more accurately
 than just receiving the cookies.onChanged notification (with no tab/frame info)
 
-It's a bit funky, in that we have to use window.eval to run the hook code in
-the context of the *page* (the content-script context is sandboxed from that) so
-as to be able to hook the cookies property in the first place
+It's a bit funky, in that we have to use add a script tag to the page to run the
+hook code in the context of the *page* (the content-script context is sandboxed
+from that) so as to be able to hook the cookies property in the first place.
+See also CSP handling in background.js (processHeader) where we add a hash
+to the relevant script-src (if any) to *allow* this inline script to execute.
+Historical note: we started with window.eval to install thhe hook, so as to
+install it really early on (vs adding a script tag), but:
+ 1. It ran foul of any sensible CSP, and would require adding 'unsafe-eval'
+    which would be a terrible thing to do to the security of every page that had
+    tried to set a sensible CSP header.
+ 2. We need the `config` which can only be loaded async, so we still had to
+    install the hook in an await function, so we still missed some early cookies
+    meaning the eval wasn't significantly better than adding a script tag.
 
 Now you might think we should call into the background page to do the validation
-but that is async and setting the cookie only happens a bit later when that
-call returns.  So any code that sets and then *immediately* checks for that
-cookie will fail (this happens for real, e.g. hushmail.com).  So we have to
+but such a call is async, and thus setting the cookie only happens a bit later
+when that call returns.  So any code that sets and then *immediately* checks for
+that cookie will fail (this happens for real, e.g. hushmail.com).  So we have to
 use window.dispatchEvent (synchronous), do the validation on the content-script
 context, and only the notify the background script of what the decision was
 for recording.  It's a smidgen more complicated than desirable, but seems to
@@ -131,35 +141,20 @@ function allowScriptedCookieSet(cookie, url) {
 }
 async function startup() {
   // Cannot capture cookies until we have config, and that is async
-  // So we have to do this in an await function, and only inject
+  // So we have to do this in an async function, and only inject
   // our capturing code *after* we have config.
   // Downside: we may miss early cookies, so we're going to have to still
   // try and capture those with events. Boooooo. Hisssss. Booooo
   config = await getConfig();
-  // Many thanks to @gregers on https://stackoverflow.com/questions/32410331/proxying-of-document-cookie
-  // for inspiration.
-  window.eval(`
-    var cookiePropertyDescriptor = Object.getOwnPropertyDescriptor(Document.prototype, "cookie");
-    Object.defineProperty(Document.prototype, "cookie", {
-      get: cookiePropertyDescriptor.get,
-      set: function(value) {
-        console.log("cookie being set");
-        var event = new CustomEvent("scriptedCookieSet",
-          {
-            detail: value
-          }
-        );
-        // It is absolutely critical that this call to dispatchEvent is, as the
-        // documentation claims, synchronous (not async).  It *must* execute
-        // the event handling code, in the content-script context, and set the
-        // cookie (if allowed) before this 'set' implementation finishes and
-        // returns, otherwise it does not accurately emulate the interface.  Code
-        // that then goes to immediately retrieve the cookie (e.g. testing
-        // if cookies are settable) will fail if this requirement is not met.
-        window.dispatchEvent(event);
-      }
-    });
-  `);
+  try {
+    var s = document.createElement('script');
+    s.text = windowContextContentScript;
+    (document.head || document.documentElement).appendChild(s);
+  } catch(e) {
+      console.log(e);
+      logger.error(e)
+  }
+
 }
 browser.runtime.onMessage.addListener(handleMessage);
 
