@@ -24,8 +24,14 @@ var windowContextContentScript = `
       window.dispatchEvent(event);
     }
   });
-`;
 
+  Object.defineProperty(Navigator.prototype, "cookieEnabled", {
+    get: function() {
+      var dataElement =  document.getElementById('cookiemaster-cookieenabled-data');
+      return dataElement.innerText == "true";
+    }
+  });
+`;
 var windowContextContentScriptSHA256 = undefined;
 
 async function getWindowContextContentScriptSHA256() {

@@ -43,6 +43,13 @@ use window.dispatchEvent (synchronous), do the validation on the content-script
 context, and only the notify the background script of what the decision was
 for recording.  It's a smidgen more complicated than desirable, but seems to
 work.  Yay for async.... :(
+
+Additionally: we keep the bulk of the code in this file, not in the injected
+script because there is a lot of included code (e.g. cookie_parse) that we'd
+have to duplicate into the embedded script tag, which adds complexity.
+We have to pass an even out eventually, so we just pass in processed information
+to the script (via additional data tags in the `head` of the document)
+so that it can make quick decisions.
 */
 var logger = contextSafeLogger();
 
@@ -96,6 +103,9 @@ async function handleMessage(message, sender, sendResponse) {
   switch (message.type) {
     case MessageTypes.ConfigChanged:
       config = await getConfig();
+      var c = document.getElementById('cookiemaster-cookieenabled-data');
+      var configDomain = domainIsAllowed(config, new URL(window.location).hostname);
+      c.innerText = (configDomain != undefined);
       break;
     }
 }
@@ -150,10 +160,20 @@ async function startup() {
     var s = document.createElement('script');
     s.text = windowContextContentScript;
     (document.head || document.documentElement).appendChild(s);
+
+    // Pass in some data for overriding navigator.cookieEnabled
+    var c = document.createElement('cookiemaster-config-data');
+    c.id = 'cookiemaster-cookieenabled-data';
+    var configDomain = domainIsAllowed(config, new URL(window.location).hostname);
+    c.innerText = (configDomain != undefined);
+    // Shove it in 'head' so it cannot possibly render in the body.
+    // We can find it (by id) regardless.
+    document.head.appendChild(c);
   } catch(e) {
       console.log(e);
       logger.error(e)
   }
+
 
 }
 browser.runtime.onMessage.addListener(handleMessage);
