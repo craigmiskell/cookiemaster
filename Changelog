@@ -61,3 +61,11 @@
   Changes:
     Fix loading of config before trying to use it to do content-script authorisation of javascript cookies.  Fixes https://github.com/craigmiskell/cookiemaster/issues/13
     Re-add detecting cookie-change events as a last-ditch to work around CSP blocking our script injection.  Fixes https://github.com/craigmiskell/cookiemaster/issues/12, and necessary to deal with side-effects of fixing issue 13
+
+2020-04-18 - version 1.1.4 release
+  Changes:
+    Refactor content script injection to be a script tag rather than an inline eval, and add a CSP header (when necessary) to allow that script tag by SHA sum.  Still a little bit race-y, but it is currently when waiting for config to load async, so this isn't substantially worse, and in many cases is likely to be better (i.e. sites with proper CSP).
+    Override navigator.cookieEnabled to reflect user settings - https://github.com/craigmiskell/cookiemaster/issues/15
+    Fixed a minor/rare (dev only?) bug with tab ids
+    Auto-open logs window when in running under web-ext for dev.
+    Generally increased hate for async being forced into places that are annoying, with no alternatives
