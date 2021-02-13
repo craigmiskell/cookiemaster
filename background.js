@@ -123,6 +123,15 @@ function tabUpdated(tabId, changeInfo, tabs) {
   }
 }
 
+// Basically https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/mozIThirdPartyUtil#isThirdPartyURI()
+// I.e. is first party if the base domains (first domain below the public suffix) are the same, otherwise third party.
+function isThirdPartyRequest(tabHostname, requestHostname, requestId) {
+  var tab = psl.parse(tabHostname);
+  var request = psl.parse(requestHostname);
+  logger.debug("isThirdPartyRequest: tab: "+tab.domain+", request: "+request.domain, requestId);
+  return tab.domain != request.domain;
+}
+
 // Checks the header, in the context of all the other parameters, and returns
 // true to retain the header, or false to filter it out.
 function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestId) {
@@ -152,35 +161,26 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
 
     var tabInfo = getTabInfo(tabId);
 
-    var isThirdParty = (tURL.hostname != rURL.hostname);
+    var isThirdParty = isThirdPartyRequest(tURL.hostname, rURL.hostname, requestId);
     if (isThirdParty) {
-      // Third party cookie
-      // TODO: But what about if rURL is example.com when tURL is foo.example.com?
-      // Is that really a third party request?
-      // How about https://blog.mozilla.org/addons/2020/01/22/extensions-in-firefox-72/
-      // and the "thirdParty" property on the request?  Might be easier than guessing.
-      // However, it seems that that flag detects things like iframes to the same
-      // domain as third party (and any resources within them, to the saame domain)
-      // which is weird, and not (IMO) what a thirdParty request really is.
-      // SO let's not use it just yet
       switch(config.thirdParty) {
         case ThirdPartyOptions.AllowAll:
           for(var cookie of cookies) {
             var d = cookie['domain'] || rURL.hostname;
             tabInfo.registerAllowedThirdPartyCookie(d, d, frameId);
+            logger.info("Allowing third party cookie for domain "+ d +" in header of request on "+tURL.hostname, requestId);
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
-          logger.info("Allowing third party cookie for domain "+ cookies[0]['domain']+" in header of request on "+tURL.hostname, requestId);
           return true;
         case ThirdPartyOptions.AllowNone:
           for(var cookie of cookies) {
             var d = cookie['domain'] || rURL.hostname;
+            logger.info("Blocking third party cookie for domain "+ d +" in header of request on "+tURL.hostname, requestId);
             tabInfo.registerBlockedThirdPartyCookie(d, frameId);
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
-          logger.info("Blocking third party cookie for domain "+ cookies[0]['domain']+" in header of request on "+tURL.hostname, requestId);
           return false;
         case ThirdPartyOptions.AllowIfOtherwiseAllowed:
           // continue on with normal filtering
@@ -211,6 +211,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
       if(configDomain != undefined) {
         allowBecause[domain] = configDomain;
       } else {
+        logger.info("Setting allOK to false  because "+domain+" was not allowed", requestId)
         allOK = false;
       }
     }
