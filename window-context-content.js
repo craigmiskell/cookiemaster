@@ -27,8 +27,7 @@ var windowContextContentScript = `
 
   Object.defineProperty(Navigator.prototype, "cookieEnabled", {
     get: function() {
-      var dataElement =  document.getElementById('cookiemaster-cookieenabled-data');
-      return dataElement.innerText == "true";
+      return document.documentElement.dataset.cm_cookies_allowed == "true";
     }
   });
 `;
