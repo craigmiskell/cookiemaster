@@ -2,6 +2,6 @@ HOW TO RELEASE:
 
 Edit manifest.json, updating the version number
 
-web-ext build -s . -a ../ -i .git .gitignore icons/*.xcf __tests__/ node_modules/ package.json package-lock.json
+web-ext build -s . -a ../ -i .git .gitignore icons/*.xcf __tests__/ node_modules/ package.json package-lock.json .github/
 
 Upload this zip file to addons.mozilla.org
