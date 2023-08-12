@@ -89,3 +89,7 @@ function domainInList(config, domain) {
   }
   return false;
 }
+
+module.exports = {
+  domainIsAllowed: domainIsAllowed
+}
