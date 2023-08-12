@@ -55,29 +55,30 @@ function domainIsAllowed(config, domain) {
   //Is a linear search ok?  Can't help but wonder if there's a more efficient technique.  Maybe a
   // transient cache of results would help?
 
-  var candidates = [];
+  var result = undefined;
   //NB: Assumes the 'allow' list has leading dots on all entries, to properly terminate domain
   // components
-  for (var candidate of config.allowList) {
-    //Domain *must* start with a dot to match the allow list constraint
-    if(!domain.startsWith('.')) {
-      domain = '.'+domain;
-    }
-    if(domain.endsWith(candidate)) {
-      candidates.push(candidate);
-    }
+
+  //Domain *must* start with a dot to match the allow list constraint
+  if(!domain.startsWith('.')) {
+    domain = '.'+domain;
   }
-  if(candidates.length > 0) {
-    var result = candidates[0];
-    for(var candidate of candidates) {
-      if(candidate.length > result.length) {
+  // From https://github.com/craigmiskell/cookiemaster/issues/27: string any trailing dot
+  // because some sites present that but it's not useful here.
+  if (domain.endsWith(".")) {
+    domain = domain.slice(0,-1);
+  }
+
+  for (var candidate of config.allowList) {
+    if(domain.endsWith(candidate)) {
+      // Use the longest (most specific) candidate (e.g. www.example.org over example.org) that
+      // allowed the cookie
+      if((result == undefined) || (candidate.length > result.length)) {
         result = candidate;
       }
     }
-    return result;
-
   }
-  return undefined;
+  return result;
 }
 
 //Reduced set of domainIsAllowed, looking for an explicit match (where 'in' doesn't seem to work)

@@ -200,7 +200,6 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
 
     logger.debug("First party cookie for "+ rURL.hostname, requestId);
     //Some miscreants (tapad.com for example) send multiple cookies in one header, with line breaks between.
-    // Fuck them, and their little dog too.
     // We check each individually, and *all* must be allowed if any are to be (e.g. they could have
     //  different domains, and we have to fail-safe)
     var allowBecause = {};
