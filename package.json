@@ -1,0 +1,25 @@
+{
+  "name": "cookie-master",
+  "version": "1.1.4",
+  "description": "Firefox cookie control webextension",
+  "main": "background.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/craigmiskell/cookiemaster.git"
+  },
+  "author": "Craig Miskell",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/craigmiskell/cookiemaster/issues"
+  },
+  "homepage": "https://github.com/craigmiskell/cookiemaster#readme",
+  "devDependencies": {
+    "jest": "^29.6.2"
+  }
+}

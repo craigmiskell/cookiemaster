@@ -183,3 +183,8 @@ class CookieDateParser {
     return new Date(year, month, day_of_month, hour, minute, second);
   }
 }
+
+// Testing support
+module.exports = {
+  CookieDateParser: CookieDateParser
+}
