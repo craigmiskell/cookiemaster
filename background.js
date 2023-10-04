@@ -168,7 +168,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
           for(var cookie of cookies) {
             var d = cookie['domain'] || rURL.hostname;
             tabInfo.registerAllowedThirdPartyCookie(d, d, frameId);
-            logger.info("Allowing third party cookie for domain "+ d +" in header of request on "+tURL.hostname, requestId);
+            logger.info("Allowing third party cookie for domain <b>"+ d +"</b> in header of request on "+tURL.hostname, requestId);
           }
           updateBrowserActionIcon(tabId);
           tabInfo.markUpdated();
@@ -176,7 +176,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
         case ThirdPartyOptions.AllowNone:
           for(var cookie of cookies) {
             var d = cookie['domain'] || rURL.hostname;
-            logger.info("Blocking third party cookie for domain "+ d +" in header of request on "+tURL.hostname, requestId);
+            logger.info("Blocking third party cookie for domain <b>"+ d +"</b> in header of request on "+tURL.hostname, requestId);
             tabInfo.registerBlockedThirdPartyCookie(d, frameId);
           }
           updateBrowserActionIcon(tabId);
@@ -210,7 +210,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
       if(configDomain != undefined) {
         allowBecause[domain] = configDomain;
       } else {
-        logger.info("Setting allOK to false  because "+domain+" was not allowed", requestId)
+        logger.info("Setting allOK to false  because <b>"+domain+"</b> was not allowed", requestId)
         allOK = false;
       }
     }
@@ -221,7 +221,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
           tabInfo.registerAllowedThirdPartyCookie(d, allowBecause[d], frameId) :
           tabInfo.registerAllowedFirstPartyCookie(d, allowBecause[d], frameId)
       }
-      logger.info("Allowing "+(isThirdParty?"third":"first")+" party cookie in header for "+domain, requestId);
+      logger.info("Allowing "+(isThirdParty?"third":"first")+" party cookie in header for <b>"+domain+"</b>", requestId);
 
     } else {
       for(var cookie of cookies) {
@@ -230,7 +230,7 @@ function shouldFilterHeader(header, requestURL, tabURL, tabId, frameId, requestI
           tabInfo.registerBlockedThirdPartyCookie(d, frameId) :
           tabInfo.registerBlockedFirstPartyCookie(d, frameId)
       }
-      logger.info("Blocking "+(isThirdParty?"third":"first")+" party cookie in header for "+domain, requestId)
+      logger.info("Blocking "+(isThirdParty?"third":"first")+" party cookie in header for <b>"+domain+"</b>", requestId)
     }
     tabInfo.markUpdated();
     updateBrowserActionIcon(tabId);
@@ -409,7 +409,7 @@ async function cookieChanged(changeInfo) {
   if(!changeInfo.removed) {
     var domain = cookie.domain;
     if(domainIsAllowed(config, domain) == undefined) {
-      logger.info("Blocking cookie-change cookie for "+domain + " in catch-all event");
+      logger.info("Blocking cookie-change cookie for <b>"+domain + "</b> in catch-all event");
       var prefix = cookie.secure ? "https://" : "http://";
       var url = prefix + domain + cookie.path;
       browser.cookies.remove({
@@ -419,7 +419,7 @@ async function cookieChanged(changeInfo) {
         firstPartyDomain: cookie.firstPartyDomain
       });
     } else {
-      logger.info("Allowing cookie-change cookie for "+domain + " in catch-all event");
+      logger.info("Allowing cookie-change cookie for <b>"+domain + "</b> in catch-all event");
     }
    }
  }
